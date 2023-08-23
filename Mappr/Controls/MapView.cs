@@ -1,8 +1,9 @@
 ﻿using Mappr.Extentions;
+using Mappr.Math;
+using Mappr.NumericalMethods;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -18,12 +19,12 @@ namespace Mappr.Controls
     {
         //Make null to disable grid.
         private Pen? debugPen = new Pen(Color.Red, 1) { DashStyle = DashStyle.Dash, DashPattern = new float[] { 5, 5 } };
-
         public Vector2 Offset { get; set; } = Vector2.Zero;
-        public ITileSource? TileSource { get; set; } = new BufferedTileSource( new FileTileSource("maps"), 16);
-
+        public ITileSource? TileSource { get; set; } = new BufferedTileSource(new FileTileSource("maps"), 16);
+        private ContextMenuStrip menu = new ContextMenuStrip();
         PictureBox pbTiles = new PictureBox();
         PictureBox pbOverlay = new PictureBox();
+        LinearRegression linearRegression = new LinearRegression();
         public MapView()
         {
             InitializeComponent();
@@ -37,35 +38,27 @@ namespace Mappr.Controls
             pbOverlay.BackColor = Color.Transparent;
 
             pbTiles.Paint += (s, e) => DrawTiles(e.Graphics, Offset, TileSource);
+            pbOverlay.Paint += (s, e) => DrawOverlay(e.Graphics, Offset);
 
             pbTiles.BringToFront();
             pbOverlay.BringToFront();
 
-            pbOverlay.MouseMove += picBox_MouseMove;
-            pbOverlay.MouseDown += picBox_MouseDown;
+            //menu.AddMenuItem("I am here!", () => );
+
         }
 
-        private Vector2 lastDown = Vector2.Zero;
-        private Vector2 offsetDown = Vector2.Zero;
-
-        private void picBox_MouseDown(object sender, MouseEventArgs e)
-        {
-            lastDown = e.Location.ToVector2();
-            offsetDown = Offset;
+        public void Redraw() {
+            pbTiles.Refresh();
+            pbOverlay?.Refresh();
         }
 
-        private void picBox_MouseMove(object sender, MouseEventArgs e)
+        void DrawOverlay(Graphics g, Vector2 offset)
         {
-            if (e.Button.HasFlag(MouseButtons.Left))
+            foreach(var item in linearRegression.Samples)
             {
-                var mousePos = e.Location.ToVector2();
-                Offset = offsetDown + mousePos - lastDown;
-                pbTiles.Refresh();
-            }  
+                g.DrawArc(Pens.Blue, new Rectangle((int)item.ScreenPos.X, (int)item.ScreenPos.Y, 5, 5), 0, 360);
+            }
         }
-
-        public void Redraw() => pbTiles.Refresh();
-
 
         void DrawTiles(Graphics g, Vector2 offset, ITileSource tileSource)
         {
@@ -124,5 +117,57 @@ namespace Mappr.Controls
             }
         }
     }
+
+    public class Scaler
+    {
+        private readonly Vector2 a;
+        private readonly Vector2 b;
+
+        public Scaler(Vector2 a, Vector2 b)
+        {
+            this.a = a; 
+            this.b = b;
+        }
+
+        public Vector2 WorldToScreen(Vector2 x)
+        {
+            return a * x + b;
+        }
+
+        public Vector2 ScreenToWorld(Vector2 y)
+        {
+            return (y - b) / a;
+        }
+
+        public static Scaler FromSamples(Coord[] samples)
+        {
+            if (samples.Length < 2)
+                throw new ArgumentException("At least two samples are required.");
+
+            var worldXVals = samples.Select(a => a.WorldPos.X).ToArray();
+            var screenXVals = samples.Select(a => a.ScreenPos.X).ToArray();
+            var xCooficients = LinearRegression.PerformLinearRegression(worldXVals, screenXVals);
+
+            var worldYVals = samples.Select(a => a.WorldPos.Y).ToArray();
+            var screenYVals = samples.Select(a => a.ScreenPos.Y).ToArray();
+            var yCooficients = LinearRegression.PerformLinearRegression(worldYVals, screenYVals);
+
+            return new Scaler(new Vector2(xCooficients.A, yCooficients.A), new Vector2(xCooficients.B, yCooficients.B));
+        }
+    }
+
+
+    public class Coord
+    {
+        public Coord(Vector2 worldPos, Vector2 screenPos)
+        {
+            WorldPos = worldPos;
+            ScreenPos = screenPos;
+        }
+
+        public Vector2 WorldPos { get; set; }
+        public Vector2 ScreenPos { get; set; }
+    }
+
 }
 
