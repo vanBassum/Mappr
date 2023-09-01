@@ -1,6 +1,5 @@
-﻿using Mappr.Extentions;
-using Mappr.Math;
-using Mappr.NumericalMethods;
+﻿using Mappr.Controls;
+using Mappr.Extentions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,6 +8,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -17,14 +17,16 @@ namespace Mappr.Controls
 {
     public partial class MapView : UserControl
     {
-        //Make null to disable grid.
-        private Pen? debugPen = new Pen(Color.Red, 1) { DashStyle = DashStyle.Dash, DashPattern = new float[] { 5, 5 } };
-        public Vector2 Offset { get; set; } = Vector2.Zero;
-        public ITileSource? TileSource { get; set; } = new BufferedTileSource(new FileTileSource("maps"), 16);
-        private ContextMenuStrip menu = new ContextMenuStrip();
-        PictureBox pbTiles = new PictureBox();
-        PictureBox pbOverlay = new PictureBox();
-        LinearRegression linearRegression = new LinearRegression();
+        public Vector2 MapOffset { get; set; } = new Vector2(128, 0);
+        public float MapScale { get; set; } = 1.0f;
+        public ITileSource? TileSource { get; set; }
+        public IMapObjectsSource? MapObjectsSource { get; set; }
+        private readonly ContextMenuStrip menu = new ContextMenuStrip();
+        private readonly PictureBox pbTiles = new PictureBox();
+        private readonly PictureBox pbOverlay = new PictureBox();
+        private Vector2 mouseDragStartPos;
+        private Vector2 mouseDragStartMapOffset;
+
         public MapView()
         {
             InitializeComponent();
@@ -37,137 +39,124 @@ namespace Mappr.Controls
             pbTiles.BackColor = Color.Transparent;
             pbOverlay.BackColor = Color.Transparent;
 
-            pbTiles.Paint += (s, e) => DrawTiles(e.Graphics, Offset, TileSource);
-            pbOverlay.Paint += (s, e) => DrawOverlay(e.Graphics, Offset);
+            pbTiles.Paint += (s, e) => DrawTiles(e.Graphics);
+            pbOverlay.Paint += (s, e) => DrawOverlay(e.Graphics);
 
             pbTiles.BringToFront();
             pbOverlay.BringToFront();
 
-            //menu.AddMenuItem("I am here!", () => );
-
+            pbOverlay.MouseWheel += PbOverlay_MouseWheel;
+            pbOverlay.MouseDown += PbOverlay_MouseDown;
+            pbOverlay.MouseMove += PbOverlay_MouseMove;
         }
+
+        private void PbOverlay_MouseMove(object? sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Vector2 mouseDelta = (mouseDragStartPos - e.Location.ToVector2());
+                MapOffset = mouseDragStartMapOffset + mouseDelta;
+                Redraw();
+            }
+        }
+
+        private void PbOverlay_MouseDown(object? sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                mouseDragStartPos = e.Location.ToVector2();
+                mouseDragStartMapOffset = MapOffset;
+            }
+        }
+
+
+        private void PbOverlay_MouseWheel(object? sender, MouseEventArgs e)
+        {
+            Vector2 mouseScreenPos = new Vector2(e.X, e.Y);
+            Vector2 mouseMapPosBeforeZoom = (mouseScreenPos / MapScale) + MapOffset;
+            float scaleFactor = e.Delta > 0 ? 1.1f : 1 / 1.1f;
+            float newMapScale = MapScale * scaleFactor;
+            newMapScale = Math.Max(1f, Math.Min(128f, newMapScale));
+            Vector2 mouseMapPosAfterZoom = (mouseScreenPos / newMapScale) + MapOffset;
+            MapOffset += (mouseMapPosBeforeZoom - mouseMapPosAfterZoom);
+            MapScale = newMapScale;
+            Redraw();
+        }
+
+
 
         public void Redraw() {
             pbTiles.Refresh();
             pbOverlay?.Refresh();
         }
 
-        void DrawOverlay(Graphics g, Vector2 offset)
-        {
-            foreach(var item in linearRegression.Samples)
-            {
-                g.DrawArc(Pens.Blue, new Rectangle((int)item.ScreenPos.X, (int)item.ScreenPos.Y, 5, 5), 0, 360);
-            }
-        }
-
-        void DrawTiles(Graphics g, Vector2 offset, ITileSource tileSource)
+        void DrawTiles(Graphics g)
         {
             if (TileSource == null)
                 return;
 
-            Stopwatch sw = Stopwatch.StartNew();
+            // Calculate the size of a single tile at the current zoom level
+            Vector2 tileSize = TileSource.TileSize * MapScale;
 
-            int tileSizeX = (int)tileSource.TileSize.X;
-            int tileSizeY = (int)tileSource.TileSize.Y;
+            // Calculate the zoom level based on the logarithm of MapScale to the base 2
+            int zoomLevel = (int)Math.Max(0, Math.Log(MapScale, 2));
 
-            int startX = (int)(-offset.X / tileSizeX);
-            int startY = (int)(-offset.Y / tileSizeY);
+            // Calculate the width and height of the destination rectangle based on the current zoom level
+            Vector2 destSize = tileSize / (1 << zoomLevel);
 
-            int endX = (int)Math.Ceiling((g.VisibleClipBounds.Width - offset.X) / tileSizeX);
-            int endY = (int)Math.Ceiling((g.VisibleClipBounds.Height - offset.Y) / tileSizeY);
+            // Calculate the number of tiles to display based on the control's size
+            int tilesX = (int)Math.Ceiling(pbTiles.ClientSize.Width / destSize.X);
+            int tilesY = (int)Math.Ceiling(pbTiles.ClientSize.Height / destSize.Y);
 
-            for (int y = startY; y < endY; y++)
+            // Calculate the top-left tile coordinates to start drawing
+            Vector2 start = MapOffset / destSize;
+
+            // Calculate the offset within the top-left tile
+            Vector2 offset = new Vector2(start.X - (int)start.X, start.Y - (int)start.Y) * destSize;
+
+            for (int x = 0; x < tilesX; x++)
             {
-                for (int x = startX; x < endX; x++)
+                for (int y = 0; y < tilesY; y++)
                 {
-                    Point tilePosition = new Point(x, y);
-                    Point drawPosition = new Point(
-                        (int)(offset.X + x * tileSizeX),
-                        (int)(offset.Y + y * tileSizeY)
-                    );
+                    int tileX = (int)start.X + x;
+                    int tileY = (int)start.Y + y;
 
-                    Bitmap? tile = tileSource.GetTile(tilePosition);
+                    // Fetch the tile image from the TileSource
+                    Bitmap? tile = TileSource.GetTile(zoomLevel, tileX, tileY);
+
                     if (tile != null)
                     {
-                        g.DrawImage(tile, drawPosition);
+                        // Calculate the destination vector for drawing the tile
+                        Vector2 destination = new Vector2(x, y) * destSize - offset;
+                        RectangleF destRect = new RectangleF(destination.X, destination.Y, destSize.X, destSize.Y);
+
+                        // Draw the tile on the map
+                        g.DrawImage(tile, destRect);
                     }
-
-                    if(debugPen != null)
-                        g.DrawString($"{x}x{y}", DefaultFont, Brushes.Red, drawPosition);
                 }
             }
-            sw.Stop();
+        }
 
-            if (debugPen != null)
+
+        void DrawOverlay(Graphics g)
+        {
+            if (MapObjectsSource == null)
+                return;
+
+            foreach (var mapObject in MapObjectsSource.GetAll())
             {
-
-                for (int y = startY; y <= endY; y++)
+                // Ensure the map object has a valid MapPosition
+                if (mapObject.MapPosition != null)
                 {
-                    int drawY = (int)(offset.Y + y * tileSizeY);
-                    g.DrawLine(debugPen, 0, drawY, (int)g.VisibleClipBounds.Width, drawY);
-                }
+                    // Convert the map position to screen coordinates
+                    Vector2 screenPos = (mapObject.MapPosition - MapOffset) * MapScale;
 
-                for (int x = startX; x <= endX; x++)
-                {
-                    int drawX = (int)(offset.X + x * tileSizeX);
-                    g.DrawLine(debugPen, drawX, 0, drawX, (int)g.VisibleClipBounds.Height);
+                    // Perform drawing for each map object
+                    mapObject.Draw(g, screenPos);
                 }
-                var msg = $"Tiles {sw.ElapsedMilliseconds}ms";
-                g.DrawString(msg, DefaultFont, Brushes.Red, new Point(0, 0));
             }
         }
     }
 
-    public class Scaler
-    {
-        private readonly Vector2 a;
-        private readonly Vector2 b;
-
-        public Scaler(Vector2 a, Vector2 b)
-        {
-            this.a = a; 
-            this.b = b;
-        }
-
-        public Vector2 WorldToScreen(Vector2 x)
-        {
-            return a * x + b;
-        }
-
-        public Vector2 ScreenToWorld(Vector2 y)
-        {
-            return (y - b) / a;
-        }
-
-        public static Scaler FromSamples(Coord[] samples)
-        {
-            if (samples.Length < 2)
-                throw new ArgumentException("At least two samples are required.");
-
-            var worldXVals = samples.Select(a => a.WorldPos.X).ToArray();
-            var screenXVals = samples.Select(a => a.ScreenPos.X).ToArray();
-            var xCooficients = LinearRegression.PerformLinearRegression(worldXVals, screenXVals);
-
-            var worldYVals = samples.Select(a => a.WorldPos.Y).ToArray();
-            var screenYVals = samples.Select(a => a.ScreenPos.Y).ToArray();
-            var yCooficients = LinearRegression.PerformLinearRegression(worldYVals, screenYVals);
-
-            return new Scaler(new Vector2(xCooficients.A, yCooficients.A), new Vector2(xCooficients.B, yCooficients.B));
-        }
-    }
-
-
-    public class Coord
-    {
-        public Coord(Vector2 worldPos, Vector2 screenPos)
-        {
-            WorldPos = worldPos;
-            ScreenPos = screenPos;
-        }
-
-        public Vector2 WorldPos { get; set; }
-        public Vector2 ScreenPos { get; set; }
-    }
 
 }
-
