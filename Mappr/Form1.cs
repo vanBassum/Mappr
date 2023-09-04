@@ -1,4 +1,5 @@
 using Mappr.Controls;
+using Mappr.Tiles;
 using System.Net;
 
 namespace Mappr
@@ -6,16 +7,17 @@ namespace Mappr
     public partial class Form1 : Form
     {
         MapView mapView = new MapView();
-        FileTileSource mapTileSource;
+        ITileSetSource mapTileSource;
         FileDownloader downloader = new FileDownloader();
         public Form1()
         {
             InitializeComponent();
             this.Controls.Add(this.mapView);
-            mapView.Location = new System.Drawing.Point(20, 20);
-            mapView.Size = new System.Drawing.Size(1024, 1024);
+            //mapView.Location = new System.Drawing.Point(20, 20);
+            //mapView.Size = new System.Drawing.Size(1024, 1024);
+            mapView.Dock = DockStyle.Fill;
             mapView.BorderStyle = BorderStyle.FixedSingle;
-            mapTileSource = new FileTileSource("maps/gta5");
+            mapTileSource = new FileTileSetSource("maps/gta5");
             mapView.TileSource = mapTileSource;
             //Download();
         }

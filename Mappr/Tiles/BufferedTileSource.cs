@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Numerics;
 
-namespace Mappr.Controls
+namespace Mappr.Tiles
 {
     //public class BufferedTileSource : ITileSource
     //{

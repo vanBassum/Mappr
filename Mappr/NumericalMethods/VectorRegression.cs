@@ -2,6 +2,8 @@
 
 namespace Mappr.Controls
 {
+
+
     public struct CoordinateSet
     {
         public Vector2 World { get; }
