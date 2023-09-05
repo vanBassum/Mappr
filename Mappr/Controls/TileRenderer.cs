@@ -21,7 +21,7 @@ namespace Mappr.Controls
         {
             var topleftscreen = Vector2.Zero;
             //screenSize = new Vector2(600, 600);
-            float zoomLevel = 1 / mapToScreen.Scale.X;
+            float zoomLevel = mapToScreen.Scale.X;
             ITileSet? closestTileSet = tileSource.GetClosestTileSet(zoomLevel);
 
             if (closestTileSet == null)
@@ -30,7 +30,6 @@ namespace Mappr.Controls
             float scalingFactor = zoomLevel / closestTileSet.Scale;
 
             // Calculate the bounds of the screen in map coordinates
-            
             Vector2 screenTopLeft = mapToScreen.ReverseTransformation(topleftscreen);
             Vector2 screenBottomRight = mapToScreen.ReverseTransformation(screenSize + topleftscreen);
 
@@ -53,7 +52,7 @@ namespace Mappr.Controls
                     if (tile != null)
                     {
                         // Calculate the screen position of the tile
-                        Vector2 tileScreenPosition = mapToScreen.ApplyTransformation(new Vector2(x * tileSizeInMapCoords.X, y * tileSizeInMapCoords.Y));
+                        Vector2 tileScreenPosition = mapToScreen.ApplyTransformation(new Vector2(x, y) * tileSizeInMapCoords);
 
                         // Scale the tile based on the scaling factor
                         int scaledWidth = (int)Math.Ceiling(tileSource.TileSize.X * scalingFactor);

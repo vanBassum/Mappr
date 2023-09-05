@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using Mappr.Extentions;
+using System.Numerics;
 
 namespace Mappr.Controls
 {
@@ -16,8 +17,18 @@ namespace Mappr.Controls
 
         public void HandleMouseWheel(MouseEventArgs e)
         {
-            float zoomFactor = e.Delta < 0 ? 1.1f : 0.9f; // Adjust the zoom factor as needed
+            // Get the mouse position in map coordinates
+            Vector2 mouseScreenPosition = e.Location.ToVector2();
+            Vector2 mouseMapPosition = mapScreenScaler.ReverseTransformation(mouseScreenPosition);
+
+            float zoomFactor = e.Delta > 0 ? 1.1f : 0.9f; // Adjust the zoom factor as needed
+
+            // Calculate the new scale and offset
             mapScreenScaler.Scale *= zoomFactor;
+
+            // Adjust the offset to pivot around the mouse position
+            mapScreenScaler.Offset = mouseScreenPosition - mouseMapPosition * mapScreenScaler.Scale;
+
             RequestRefresh?.Invoke(this, EventArgs.Empty); // Trigger refresh event
         }
 

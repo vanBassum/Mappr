@@ -9,9 +9,11 @@ using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace Mappr.Controls
 {
@@ -42,7 +44,7 @@ namespace Mappr.Controls
             pbTiles.BringToFront();
             pbOverlay.BringToFront();
 
-            MapScreenScaler.Scale = Vector2.One * 0.5f;
+            MapScreenScaler.Scale = Vector2.One;
             MapScreenScaler.Offset = new Vector2(0, 0);
 
             interactions = new MapViewInteractions(MapScreenScaler); // Initialize interactions class
@@ -76,7 +78,23 @@ namespace Mappr.Controls
 
         void DrawOverlay(Graphics g)
         {
+            Vector2 mapPos = new Vector2(45, 30);
+            Vector2 screenPos = MapScreenScaler.ApplyTransformation(mapPos);
 
+            DrawCross(g, Pens.Red, screenPos);
+        }
+
+        void DrawCross(Graphics g, Pen pen, Vector2 screenPos, int crossSize = 10)
+        {
+            // Calculate the starting and ending points for the cross lines
+            Point startPointHorizontal = new Point((int)screenPos.X - crossSize, (int)screenPos.Y);
+            Point endPointHorizontal = new Point((int)screenPos.X + crossSize, (int)screenPos.Y);
+            Point startPointVertical = new Point((int)screenPos.X, (int)screenPos.Y - crossSize);
+            Point endPointVertical = new Point((int)screenPos.X, (int)screenPos.Y + crossSize);
+
+            // Draw the horizontal and vertical lines to create the cross
+            g.DrawLine(pen, startPointHorizontal, endPointHorizontal);
+            g.DrawLine(pen, startPointVertical, endPointVertical);
         }
     }
 }
