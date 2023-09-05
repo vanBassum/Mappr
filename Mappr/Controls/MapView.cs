@@ -43,7 +43,7 @@ namespace Mappr.Controls
             pbOverlay.BringToFront();
 
             MapScreenScaler.Scale = Vector2.One * 0.5f;
-            MapScreenScaler.Offset = new Vector2(100, 100);
+            MapScreenScaler.Offset = new Vector2(0, 0);
 
             interactions = new MapViewInteractions(MapScreenScaler); // Initialize interactions class
             interactions.RequestRefresh += (s, e) => Redraw();
@@ -69,9 +69,8 @@ namespace Mappr.Controls
             if (TileSource == null)
                 return;
 
-            float zoomLevel = 1 / MapScreenScaler.Scale.X;
             TileRenderer tileRenderer = new TileRenderer(TileSource, MapScreenScaler, this.ClientSize.ToVector2());
-            tileRenderer.RenderTiles(g, zoomLevel);
+            tileRenderer.RenderTiles(g);
         }
 
 
