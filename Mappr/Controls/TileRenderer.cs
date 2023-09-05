@@ -1,4 +1,6 @@
 ﻿using Mappr.Tiles;
+using System.Diagnostics;
+using System.Drawing.Drawing2D;
 using System.Numerics;
 
 namespace Mappr.Controls
@@ -19,6 +21,8 @@ namespace Mappr.Controls
 
         public void RenderTiles(Graphics g)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            Stopwatch load = new Stopwatch();
             var topleftscreen = Vector2.Zero;
             //screenSize = new Vector2(600, 600);
             float zoomLevel = mapToScreen.Scale.X;
@@ -42,6 +46,8 @@ namespace Mappr.Controls
             int lastTileX = (int)Math.Ceiling(screenBottomRight.X / tileSizeInMapCoords.X);
             int lastTileY = (int)Math.Ceiling(screenBottomRight.Y / tileSizeInMapCoords.Y);
 
+            TimeSpan t = new TimeSpan();
+
             // Loop through each visible tile and render it
             for (int x = firstTileX; x <= lastTileX - 1; x++)
             {
@@ -58,10 +64,23 @@ namespace Mappr.Controls
                         int scaledWidth = (int)Math.Ceiling(tileSource.TileSize.X * scalingFactor);
                         int scaledHeight = (int)Math.Ceiling(tileSource.TileSize.Y * scalingFactor);
                         var rect = new Rectangle((int)Math.Ceiling(tileScreenPosition.X), (int)Math.Ceiling(tileScreenPosition.Y), scaledWidth, scaledHeight);
-                        g.DrawImage(tile, rect);
+                        load.Restart();
+                        if(scalingFactor == 1)
+                            g.DrawImage(tile, (int)Math.Ceiling(tileScreenPosition.X), (int)Math.Ceiling(tileScreenPosition.Y));
+                        else
+                            g.DrawImage(tile, rect);
+                        load.Stop();
+                        t += load.Elapsed;
+                        
                     }
                 }
             }
+
+
+            stopwatch.Stop();
+            Font font = new Font("Arial", 12);
+            Brush brush = Brushes.Green; // You can choose a different color
+            g.DrawString($"Tiles: {stopwatch.ElapsedMilliseconds} {t.TotalMilliseconds}", font, brush, 0, 0);
         }
     }
 }

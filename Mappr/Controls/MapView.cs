@@ -38,7 +38,7 @@ namespace Mappr.Controls
             pbTiles.BackColor = Color.Transparent;
             pbOverlay.BackColor = Color.Transparent;
 
-            pbTiles.Paint += (s, e) => DrawTiles(e.Graphics);
+            pbTiles.Paint += PbTiles_Paint;
             pbOverlay.Paint += (s, e) => DrawOverlay(e.Graphics);
 
             pbTiles.BringToFront();
@@ -50,6 +50,25 @@ namespace Mappr.Controls
             interactions = new MapViewInteractions(MapScreenScaler); // Initialize interactions class
             interactions.RequestRefresh += (s, e) => Redraw();
             AttachMouseHandlers();
+            this.DoubleBuffered= false;  
+        }
+
+        private void PbTiles_Paint(object? sender, PaintEventArgs e)
+        {
+            DrawTiles(e.Graphics);
+            //using (Graphics graphics = CreateGraphics())
+            //{
+            //    var graphicsBuffer = BufferedGraphicsManager.Current.Allocate(graphics, new Rectangle(0, 0, ClientSize.Width, ClientSize.Height));
+            //    
+            //    Graphics g = graphicsBuffer.Graphics;
+            //
+            //    DrawTiles(g);
+            //
+            //    graphicsBuffer.Render(e.Graphics);
+            //
+            //}
+
+
         }
 
         private void AttachMouseHandlers()
