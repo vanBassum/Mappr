@@ -7,19 +7,15 @@ namespace Mappr.Controls
 {
     public class TileRenderer
     {
-        private readonly ITileSource tileSource;
         private readonly CoordinateScaler2D mapToScreen;
-        private Vector2 screenSize;
 
-        public TileRenderer(ITileSource tileSource, CoordinateScaler2D mapToScreen, Vector2 screenSize)
+        public TileRenderer(CoordinateScaler2D mapToScreen)
         {
-            this.tileSource = tileSource;
             this.mapToScreen = mapToScreen;
-            this.screenSize = screenSize;
         }
 
 
-        public void RenderTiles(Graphics g)
+        public void RenderTiles(Graphics g, ITileSource TileSource, Vector2 screenSize)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
             Stopwatch load = new Stopwatch();
@@ -32,7 +28,7 @@ namespace Mappr.Controls
             Vector2 screenBottomRight = mapToScreen.ReverseTransformation(screenSize + topleftscreen);
 
             // Calculate the size of each tile in map coordinates
-            var tileInfo = tileSource.GetTileSize(zoomLevel);
+            var tileInfo = TileSource.GetTileSize(zoomLevel);
             Vector2 tileSizeInScreenCoords = tileInfo.TileSize;
             Vector2 tileSizeInMapCoords = tileSizeInScreenCoords / mapToScreen.Scale;
 
@@ -50,7 +46,7 @@ namespace Mappr.Controls
                 for (int y = firstTileY; y <= lastTileY - 1; y++)
                 {
                     // Get the tile from the closest ITileSet
-                    Tile? tile = tileSource.GetTile(x, y, zoomLevel);
+                    Tile? tile = TileSource.GetTile(x, y, zoomLevel);
                     if (tile != null)
                     {
                         // Calculate the screen position of the tile

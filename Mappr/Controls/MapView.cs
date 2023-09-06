@@ -1,34 +1,50 @@
 ﻿using Mappr.Extentions;
 using Mappr.Tiles;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace Mappr.Controls
 {
     public partial class MapView : UserControl
     {
-        private readonly PictureBox pbTiles = new PictureBox();
-        private readonly PictureBox pbOverlay = new PictureBox();
-        private readonly CoordinateScaler2D MapScreenScaler = new CoordinateScaler2D();
-        private readonly MapViewInteractions interactions; // Create an instance of the interactions class
+        private readonly PictureBox pbTiles;
+        private readonly PictureBox pbOverlay;
+        private readonly CoordinateScaler2D mapScreenScaler;
+        private readonly DrawableRenderer drawableRenderer;
+        private readonly TileRenderer tileRenderer;
+        private readonly MapViewInteractions interactions;
+        private MapEntitySource? mapEntitySource;
+        private ITileSource? tileSource;
 
-        public ITileSource? TileSource { get; set; }
+        public MapEntitySource? MapEntitySource
+        {
+            get => mapEntitySource; 
+            set
+            {
+                mapEntitySource = value; 
+               // interactions.MapEntitySource = value;
+            }
+        }
+        public ITileSource? TileSource
+        {
+            get => tileSource; 
+            set
+            {
+                tileSource = value;
+            }
+        }
+
 
         public MapView()
         {
             InitializeComponent();
+
+            pbTiles = new PictureBox();
+            pbOverlay = new PictureBox();
+            mapScreenScaler = new CoordinateScaler2D();
+            drawableRenderer = new DrawableRenderer(mapScreenScaler);
+            tileRenderer = new TileRenderer(mapScreenScaler);
+            interactions = new MapViewInteractions(mapScreenScaler);
+
             this.Controls.Add(pbTiles);
             pbTiles.Controls.Add(pbOverlay);
 
@@ -38,49 +54,26 @@ namespace Mappr.Controls
             pbTiles.BackColor = Color.Transparent;
             pbOverlay.BackColor = Color.Transparent;
 
-            pbTiles.Paint += PbTiles_Paint;
+            pbTiles.Paint += (s, e) => DrawTiles(e.Graphics);
             pbOverlay.Paint += (s, e) => DrawOverlay(e.Graphics);
 
             pbTiles.BringToFront();
             pbOverlay.BringToFront();
 
-            MapScreenScaler.Scale = Vector2.One;
-            MapScreenScaler.Offset = new Vector2(0, 0);
-
-            interactions = new MapViewInteractions(MapScreenScaler); // Initialize interactions class
-            interactions.RequestRefresh += (s, e) => Redraw();
-            AttachMouseHandlers();
-            this.DoubleBuffered= false;  
-        }
-
-        private void PbTiles_Paint(object? sender, PaintEventArgs e)
-        {
-            DrawTiles(e.Graphics);
-            //using (Graphics graphics = CreateGraphics())
-            //{
-            //    var graphicsBuffer = BufferedGraphicsManager.Current.Allocate(graphics, new Rectangle(0, 0, ClientSize.Width, ClientSize.Height));
-            //    
-            //    Graphics g = graphicsBuffer.Graphics;
-            //
-            //    DrawTiles(g);
-            //
-            //    graphicsBuffer.Render(e.Graphics);
-            //
-            //}
-
-
-        }
-
-        private void AttachMouseHandlers()
-        {
             pbOverlay.MouseWheel += (s, e) => interactions.HandleMouseWheel(e);
             pbOverlay.MouseDown += (s, e) => interactions.HandleMouseDown(e);
             pbOverlay.MouseUp += (s, e) => interactions.HandleMouseUp(e);
             pbOverlay.MouseMove += (s, e) => interactions.HandleMouseMove(e);
+
+            mapScreenScaler.Scale = Vector2.One;
+            mapScreenScaler.Offset = new Vector2(0, 0);
+
+            interactions.RequestRefresh += (s, e) => Redraw();
         }
 
 
-        public void Redraw() {
+        public void Redraw()
+        {
             pbTiles.Refresh();
             pbOverlay?.Refresh();
         }
@@ -90,16 +83,39 @@ namespace Mappr.Controls
             if (TileSource == null)
                 return;
 
-            TileRenderer tileRenderer = new TileRenderer(TileSource, MapScreenScaler, this.ClientSize.ToVector2());
-            tileRenderer.RenderTiles(g);
+            tileRenderer.RenderTiles(g, TileSource, this.ClientSize.ToVector2());
         }
 
 
         void DrawOverlay(Graphics g)
         {
-            Vector2 mapPos = new Vector2(45, 30);
-            Vector2 screenPos = MapScreenScaler.ApplyTransformation(mapPos);
+            if (MapEntitySource == null)
+                return;
 
+            drawableRenderer.Render(g, MapEntitySource.GetDrawables(), this.ClientSize.ToVector2());
+        }
+    }
+
+
+
+    public class MapEntitySource
+    {
+        private List<MapEntity> entities = new List<MapEntity>();
+
+        public IEnumerable<IDrawable> GetDrawables() => entities;
+
+        public IEnumerable<MapEntity> GetEntities() => entities;
+
+
+        public void Add(MapEntity entity) => entities.Add(entity);
+    }
+
+    public class MapEntity : IDrawable
+    {
+        public Vector2 MapPosition { get; set; }
+
+        public void Draw(Graphics g, Vector2 screenPos)
+        {
             DrawCross(g, Pens.Red, screenPos);
         }
 
@@ -116,4 +132,11 @@ namespace Mappr.Controls
             g.DrawLine(pen, startPointVertical, endPointVertical);
         }
     }
+
+
+
+
+
+
+
 }
