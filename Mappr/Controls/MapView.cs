@@ -98,43 +98,6 @@ namespace Mappr.Controls
 
 
 
-    public class MapEntitySource
-    {
-        private List<MapEntity> entities = new List<MapEntity>();
-
-        public IEnumerable<IDrawable> GetDrawables() => entities;
-
-        public IEnumerable<MapEntity> GetEntities() => entities;
-
-
-        public void Add(MapEntity entity) => entities.Add(entity);
-    }
-
-    public class MapEntity : IDrawable
-    {
-        public Vector2 MapPosition { get; set; }
-
-        public void Draw(Graphics g, Vector2 screenPos)
-        {
-            DrawCross(g, Pens.Red, screenPos);
-        }
-
-        void DrawCross(Graphics g, Pen pen, Vector2 screenPos, int crossSize = 10)
-        {
-            // Calculate the starting and ending points for the cross lines
-            Point startPointHorizontal = new Point((int)screenPos.X - crossSize, (int)screenPos.Y);
-            Point endPointHorizontal = new Point((int)screenPos.X + crossSize, (int)screenPos.Y);
-            Point startPointVertical = new Point((int)screenPos.X, (int)screenPos.Y - crossSize);
-            Point endPointVertical = new Point((int)screenPos.X, (int)screenPos.Y + crossSize);
-
-            // Draw the horizontal and vertical lines to create the cross
-            g.DrawLine(pen, startPointHorizontal, endPointHorizontal);
-            g.DrawLine(pen, startPointVertical, endPointVertical);
-        }
-    }
-
-
-
 
 
 

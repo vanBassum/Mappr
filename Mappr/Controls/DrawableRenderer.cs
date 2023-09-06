@@ -15,8 +15,7 @@ namespace Mappr.Controls
         {
             foreach (var drawable in drawables)
             {
-                var screenPos = mapToScreen.ApplyTransformation(drawable.MapPosition);
-                drawable.Draw(g, screenPos);
+                drawable.Draw(g, mapToScreen, screenSize);
             }
         }
     }

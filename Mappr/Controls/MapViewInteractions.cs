@@ -9,7 +9,7 @@ namespace Mappr.Controls
         private bool isDragging = false;
         private Point lastMouseLocation;
         private CoordinateScaler2D mapScreenScaler;
-        public float ZoomFactor { get; set; } = 2f;
+        public float ZoomFactor { get; set; } = 1.25f;
         public float MaxZoom { get; set; } = 64f;
         public float MinZoom { get; set; } = 1f;
 

@@ -39,6 +39,7 @@ namespace Mappr.Controls
             int lastTileY = (int)Math.Ceiling(screenBottomRight.Y / tileSizeInMapCoords.Y);
 
             TimeSpan t = new TimeSpan();
+            g.Clear(Color.FromArgb(0x0D, 0x2B, 0x4F));
 
             // Loop through each visible tile and render it
             for (int x = firstTileX; x <= lastTileX - 1; x++)
@@ -49,15 +50,15 @@ namespace Mappr.Controls
                     Tile? tile = TileSource.GetTile(x, y, zoomLevel);
                     if (tile != null)
                     {
-                        // Calculate the screen position of the tile
                         Vector2 tileScreenPosition = mapToScreen.ApplyTransformation(new Vector2(x, y) * tileSizeInMapCoords);
+                        int xPos = (int)Math.Ceiling(tileScreenPosition.X);
+                        int yPos = (int)Math.Ceiling(tileScreenPosition.Y);
 
                         // Scale the tile based on the scaling factor
                         load.Restart();
-                        g.DrawImage(tile.Bitmap, (int)Math.Ceiling(tileScreenPosition.X), (int)Math.Ceiling(tileScreenPosition.Y));
+                        g.DrawImage(tile.Bitmap, xPos, yPos);
                         load.Stop();
                         t += load.Elapsed;
-                        
                     }
                 }
             }

@@ -24,7 +24,7 @@ namespace Mappr.Tiles
                 if (_tileCache.TryGetValue((x, y, scale), out Tile? cachedTile))
                     return cachedTile;
 
-                Debug.WriteLine($"Tile not found in cache at ({x},{y}) with scale {scale}");
+                //Debug.WriteLine($"Tile not found in cache at ({x},{y}) with scale {scale}");
 
                 // Tile not in cache, fetch it from the source.
                 Tile? tile = _tileSource.GetTile(x, y, scale);
@@ -65,7 +65,11 @@ namespace Mappr.Tiles
 
             // Remove the tiles with different scales.
             foreach (var keyToRemove in differentScaleKeys)
+            {
+                _tileCache[keyToRemove].Bitmap.Dispose();
                 _tileCache.Remove(keyToRemove);
+            }
+                
 
             return differentScaleKeys.Count > 0; // Return true if any different-scale tiles were removed.
         }
@@ -89,6 +93,7 @@ namespace Mappr.Tiles
             }
 
             // Remove the tile furthest from the requested coordinates from the cache.
+            _tileCache[tileToRemoveKey].Bitmap.Dispose();
             _tileCache.Remove(tileToRemoveKey);
         }
 

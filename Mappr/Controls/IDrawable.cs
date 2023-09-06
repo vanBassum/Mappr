@@ -4,7 +4,6 @@ namespace Mappr.Controls
 {
     public interface IDrawable
     {
-        Vector2 MapPosition { get; }
-        void Draw(Graphics g, Vector2 screenPos);
+        void Draw(Graphics g, CoordinateScaler2D scaler, Vector2 screenSize);
     }
 }

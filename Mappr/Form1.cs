@@ -1,7 +1,9 @@
 using Mappr.Controls;
+using Mappr.Extentions;
 using Mappr.Tiles;
 using System.Diagnostics;
 using System.Net;
+using System.Numerics;
 
 namespace Mappr
 {
@@ -9,6 +11,7 @@ namespace Mappr
     {
         MapView mapView = new MapView();
         FileDownloader downloader = new FileDownloader();
+        MapEntitySource entitySource = new MapEntitySource();
         public Form1()
         {
             InitializeComponent();
@@ -19,10 +22,16 @@ namespace Mappr
             mapView.Dock = DockStyle.Fill;
             mapView.BorderStyle = BorderStyle.FixedSingle;
 
-            FileTileSource fileSource = new FileTileSource("C:\\Workspace\\Mappr\\Mappr\\bin\\Debug\\net7.0-windows\\maps\\gta5");
+            FileTileSource fileSource = new FileTileSource("maps/gta5");
             ScalerTileSource scaler = new ScalerTileSource(fileSource);
-            CachingTileSource cashing = new CachingTileSource(scaler, (1920*1080) / (128*128));
+            CachingTileSource cashing = new CachingTileSource(scaler, (1920*1080) * 5 / (128*128));
             mapView.TileSource = cashing;
+            mapView.MapEntitySource = entitySource;
+
+            entitySource.Add(new MapEntity { MapPosition = new Vector2(100, 100) });
+            entitySource.Add(new MapEntity { MapPosition = new Vector2(50, 50) });
+            entitySource.Add(new PlayerEntity ( new Vector2(75, 75) ));
+
             //Download();
         }
 
@@ -66,6 +75,34 @@ namespace Mappr
             mapView.Redraw();
         }
     }
+
+    public class PlayerEntity : MapEntity
+    {
+        public float Rotation { get; set; } // Angle in radians
+
+        public PlayerEntity(Vector2 initialPosition)
+        {
+            MapPosition = initialPosition;
+            Rotation = 0; // Initial rotation (e.g., facing north)
+        }
+
+        public override void Draw(Graphics g, CoordinateScaler2D scaler, Vector2 screenSize)
+        {
+            // Calculate the screen position of the player
+            Vector2 screenPosition = scaler.ApplyTransformation(MapPosition);
+
+            // Calculate the endpoints of the arrow
+            Vector2 arrowStart = screenPosition;
+            Vector2 arrowEnd = screenPosition + new Vector2(MathF.Cos(Rotation), MathF.Sin(Rotation)) * 20; // Adjust arrow length as needed
+
+            // Draw the player icon (e.g., a circle) at the player's position
+            g.FillEllipse(Brushes.Blue, screenPosition.X - 5, screenPosition.Y - 5, 10, 10);
+
+            // Draw the arrow
+            g.DrawLine(Pens.Blue, arrowStart.ToPoint(), arrowEnd.ToPoint());
+        }
+    }
+
 
 
     public class FileDownloader

@@ -21,7 +21,7 @@ namespace Mappr.Tiles
                 string filePath = Path.Combine(_basePath, $"{zoom}\\{x}x{y}.jpg");
                 if (!File.Exists(filePath))
                 {
-                    Debug.WriteLine($"Tile not found: {filePath}");
+                    //Debug.WriteLine($"Tile not found: {filePath}");
                     return null;
                 }
 

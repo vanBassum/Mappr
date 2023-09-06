@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Numerics;
 
 namespace Mappr.Tiles
 {
@@ -20,7 +19,7 @@ namespace Mappr.Tiles
 
                 if (tile == null)
                 {
-                    Debug.WriteLine($"Tile not found at ({x},{y}) with scale {scale}");
+                    //Debug.WriteLine($"Tile not found at ({x},{y}) with scale {scale}");
                     return null;
                 }
 
@@ -50,16 +49,16 @@ namespace Mappr.Tiles
             if (Math.Abs(scaleRatio - 1.0f) < float.Epsilon)
                 return input; // No scaling needed; return the original tile.
 
-            using (Bitmap original = input.Bitmap)
-            {
-                int newWidth = (int)(original.Width * scaleRatio);
-                int newHeight = (int)(original.Height * scaleRatio);
+            Bitmap original = input.Bitmap;
 
-                using (Bitmap resized = new Bitmap(original, newWidth, newHeight))
-                {
-                    return new Tile(resized, desiredScale);
-                }
-            }
+            int newWidth = (int)Math.Ceiling(original.Width * scaleRatio);
+            int newHeight = (int)Math.Ceiling(original.Height * scaleRatio);
+
+            Bitmap resized = new Bitmap(original, newWidth, newHeight);
+            original.Dispose();
+            return new Tile(resized, desiredScale);
+
+
         }
     }
 }
