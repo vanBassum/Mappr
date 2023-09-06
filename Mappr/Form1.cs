@@ -1,5 +1,6 @@
 using Mappr.Controls;
 using Mappr.Tiles;
+using System.Diagnostics;
 using System.Net;
 
 namespace Mappr
@@ -7,18 +8,21 @@ namespace Mappr
     public partial class Form1 : Form
     {
         MapView mapView = new MapView();
-        ITileSetSource mapTileSource;
         FileDownloader downloader = new FileDownloader();
         public Form1()
         {
             InitializeComponent();
+
             this.Controls.Add(this.mapView);
             //mapView.Location = new System.Drawing.Point(20, 20);
             //mapView.Size = new System.Drawing.Size(1024, 1024);
             mapView.Dock = DockStyle.Fill;
             mapView.BorderStyle = BorderStyle.FixedSingle;
-            mapTileSource = new FileTileSetSource("maps/gta5");
-            mapView.TileSource = mapTileSource;
+
+            FileTileSource fileSource = new FileTileSource("C:\\Workspace\\Mappr\\Mappr\\bin\\Debug\\net7.0-windows\\maps\\gta5");
+            ScalerTileSource scaler = new ScalerTileSource(fileSource);
+            CachingTileSource cashing = new CachingTileSource(scaler, (1920*1080) / (128*128));
+            mapView.TileSource = cashing;
             //Download();
         }
 
@@ -35,7 +39,7 @@ namespace Mappr
 
         private void mapView1_Load(object sender, EventArgs e)
         {
-        
+            
         }
 
         async Task Download()

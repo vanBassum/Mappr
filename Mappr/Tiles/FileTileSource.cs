@@ -1,57 +1,44 @@
-﻿using Mappr.Extentions;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Numerics;
 
 namespace Mappr.Tiles
 {
-
-    public class FileTileSetSource : ITileSetSource
+    public class FileTileSource : ITileSource
     {
-        public Vector2 TileSize { get; set; } = new Vector2(256, 256);
-        private readonly SortedDictionary<int, TileSet> tileSets = new();
-        private readonly SortedDictionary<int, BufferedTileSet> btileSets = new();
-
-        public FileTileSetSource(string dir)
+        private string _basePath;
+        private Vector2 _tileSize = new Vector2(256, 256);
+        public FileTileSource(string basePath)
         {
-            foreach (var file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
+            _basePath = basePath;
+        }
+
+        public Tile? GetTile(int x, int y, float scale)
+        {
+            int zoom = (int)Math.Round(Math.Log(scale, 2));
+
+            try
             {
-                var relativePath = Path.GetRelativePath(dir, file);
-                var fileName = Path.GetFileNameWithoutExtension(relativePath);
-                var dirName = Path.GetDirectoryName(relativePath);
-                var split = fileName?.Split('x');
-                if (split?.Length == 2)
+                string filePath = Path.Combine(_basePath, $"{zoom}\\{x}x{y}.jpg");
+                if (!File.Exists(filePath))
                 {
-                    if (int.TryParse(dirName, out int zoom) &&
-                        int.TryParse(split[0], out int x) &&
-                        int.TryParse(split[1], out int y))
-                    {
-                        Insert(x, y, 1 << zoom, file);
-                    }
+                    Debug.WriteLine($"Tile not found: {filePath}");
+                    return null;
                 }
-            }
-            //if (files.Any())
-            //   TileSize = Image.FromFile(files.FirstOrDefault().Value).Size.ToVector2();
-        }
 
-        public ITileSet? GetClosestTileSet(float zoom)
-        {
-            foreach (var item in btileSets)
+                Bitmap tileBitmap = new Bitmap(filePath);
+                return new Tile(tileBitmap, 1<<zoom);
+            }
+            catch (Exception ex)
             {
-                if (item.Key >= zoom)
-                    return item.Value;
+                Debug.WriteLine($"Error loading tile: {ex.Message}");
+                return null;
             }
-            return null;
         }
 
-        void Insert(int x, int y, int zoom, string file)
+        public TileSizeInfo GetTileSize(float scale)
         {
-            if (!tileSets.ContainsKey(zoom))
-            { 
-                tileSets[zoom] = new TileSet(zoom);
-                btileSets[zoom] = new BufferedTileSet(tileSets[zoom]);
-            }
-            tileSets[zoom].Add(x, y, file);
+            int zoom = (int)Math.Round(Math.Log(scale, 2));
+            return new TileSizeInfo(_tileSize, 1 << zoom);
         }
     }
 }

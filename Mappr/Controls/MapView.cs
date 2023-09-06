@@ -24,7 +24,7 @@ namespace Mappr.Controls
         private readonly CoordinateScaler2D MapScreenScaler = new CoordinateScaler2D();
         private readonly MapViewInteractions interactions; // Create an instance of the interactions class
 
-        public ITileSetSource? TileSource { get; set; }
+        public ITileSource? TileSource { get; set; }
 
         public MapView()
         {
