@@ -6,6 +6,11 @@ namespace Mappr.Controls
 {
     public partial class MapView : UserControl
     {
+        public new event EventHandler<MapMouseEventArgs> MouseWheel;
+        public new event EventHandler<MapMouseEventArgs> MouseDown;
+        public new event EventHandler<MapMouseEventArgs> MouseUp;
+        public new event EventHandler<MapMouseEventArgs> MouseMove;
+
         private readonly PictureBox pbTiles;
         private readonly PictureBox pbOverlay;
         private readonly CoordinateScaler2D mapScreenScaler;
@@ -17,16 +22,16 @@ namespace Mappr.Controls
 
         public MapEntitySource? MapEntitySource
         {
-            get => mapEntitySource; 
+            get => mapEntitySource;
             set
             {
-                mapEntitySource = value; 
-               // interactions.MapEntitySource = value;
+                mapEntitySource = value;
+                // interactions.MapEntitySource = value;
             }
         }
         public ITileSource? TileSource
         {
-            get => tileSource; 
+            get => tileSource;
             set
             {
                 tileSource = value;
@@ -37,13 +42,12 @@ namespace Mappr.Controls
         public MapView()
         {
             InitializeComponent();
-
             pbTiles = new PictureBox();
             pbOverlay = new PictureBox();
             mapScreenScaler = new CoordinateScaler2D();
             drawableRenderer = new DrawableRenderer(mapScreenScaler);
             tileRenderer = new TileRenderer(mapScreenScaler);
-            interactions = new MapViewInteractions(mapScreenScaler);
+            interactions = new MapViewInteractions(mapScreenScaler, pbOverlay);
 
             this.Controls.Add(pbTiles);
             pbTiles.Controls.Add(pbOverlay);
@@ -60,10 +64,10 @@ namespace Mappr.Controls
             pbTiles.BringToFront();
             pbOverlay.BringToFront();
 
-            pbOverlay.MouseWheel += (s, e) => interactions.HandleMouseWheel(e);
-            pbOverlay.MouseDown += (s, e) => interactions.HandleMouseDown(e);
-            pbOverlay.MouseUp += (s, e) => interactions.HandleMouseUp(e);
-            pbOverlay.MouseMove += (s, e) => interactions.HandleMouseMove(e);
+            interactions.MouseWheel += (s, e) => MouseWheel?.Invoke(this, e);
+            interactions.MouseDown += (s, e) => MouseDown?.Invoke(this, e);
+            interactions.MouseUp += (s, e) => MouseUp?.Invoke(this, e);
+            interactions.MouseMove += (s, e) => MouseMove?.Invoke(this, e);
 
             mapScreenScaler.Scale = Vector2.One;
             mapScreenScaler.Offset = new Vector2(0, 0);

@@ -12,6 +12,7 @@ namespace Mappr
         MapView mapView = new MapView();
         FileDownloader downloader = new FileDownloader();
         MapEntitySource entitySource = new MapEntitySource();
+        PlayerEntity playerEntity = new PlayerEntity(new Vector2(75, 75));
         public Form1()
         {
             InitializeComponent();
@@ -30,11 +31,18 @@ namespace Mappr
 
             entitySource.Add(new MapEntity { MapPosition = new Vector2(100, 100) });
             entitySource.Add(new MapEntity { MapPosition = new Vector2(50, 50) });
-            entitySource.Add(new PlayerEntity ( new Vector2(75, 75) ));
+            entitySource.Add(playerEntity);
 
+            mapView.MouseMove += MapView_MouseMove;
             //Download();
         }
 
+        private void MapView_MouseMove(object? sender, MapMouseEventArgs e)
+        {
+            var screenPos = e.Scaler.ApplyTransformation(playerEntity.MapPosition);
+            playerEntity.Hover = Vector2.Distance(screenPos, e.ScreenPosition) < 5f;
+            e.RequestRedraw = true;
+        }
 
         string GetUri(int z, int x, int y)
         {
@@ -78,6 +86,7 @@ namespace Mappr
 
     public class PlayerEntity : MapEntity
     {
+        public bool Hover { get; set; }
         public float Rotation { get; set; } // Angle in radians
 
         public PlayerEntity(Vector2 initialPosition)
@@ -96,7 +105,10 @@ namespace Mappr
             Vector2 arrowEnd = screenPosition + new Vector2(MathF.Cos(Rotation), MathF.Sin(Rotation)) * 20; // Adjust arrow length as needed
 
             // Draw the player icon (e.g., a circle) at the player's position
-            g.FillEllipse(Brushes.Blue, screenPosition.X - 5, screenPosition.Y - 5, 10, 10);
+            if(Hover)
+                g.FillEllipse(Brushes.Blue, screenPosition.X - 5, screenPosition.Y - 5, 10, 10);
+            else
+                g.FillEllipse(Brushes.Red, screenPosition.X - 5, screenPosition.Y - 5, 10, 10);
 
             // Draw the arrow
             g.DrawLine(Pens.Blue, arrowStart.ToPoint(), arrowEnd.ToPoint());
