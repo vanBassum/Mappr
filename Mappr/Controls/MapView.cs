@@ -18,7 +18,7 @@ namespace Mappr.Controls
         private readonly CoordinateScaler2D mapScreenScaler;
         private readonly DrawableRenderer drawableRenderer;
         private readonly TileRenderer tileRenderer;
-        private readonly MapViewInteractions interactions;
+        private readonly MapViewInteractionsManager interactionsManager;
         private MapEntitySource? mapEntitySource;
         private ITileSource? tileSource;
 
@@ -49,7 +49,7 @@ namespace Mappr.Controls
             mapScreenScaler = new CoordinateScaler2D();
             drawableRenderer = new DrawableRenderer(mapScreenScaler);
             tileRenderer = new TileRenderer(mapScreenScaler);
-            interactions = new MapViewInteractions(mapScreenScaler, pbOverlay);
+            interactionsManager = new MapViewInteractionsManager(mapScreenScaler, pbOverlay);
 
             this.Controls.Add(pbTiles);
             pbTiles.Controls.Add(pbOverlay);
@@ -66,18 +66,24 @@ namespace Mappr.Controls
             pbTiles.BringToFront();
             pbOverlay.BringToFront();
 
-            interactions.MouseWheel += (s, e) => MouseWheel?.Invoke(this, e);
-            interactions.MouseDown += (s, e) => MouseDown?.Invoke(this, e);
-            interactions.MouseUp += (s, e) => MouseUp?.Invoke(this, e);
-            interactions.MouseMove += (s, e) => MouseMove?.Invoke(this, e);
-            interactions.MouseClick += (s, e) => MouseClick?.Invoke(this, e);
+            interactionsManager.MouseWheel += (s, e) => MouseWheel?.Invoke(this, e);
+            interactionsManager.MouseDown += (s, e) => MouseDown?.Invoke(this, e);
+            interactionsManager.MouseUp += (s, e) => MouseUp?.Invoke(this, e);
+            interactionsManager.MouseMove += (s, e) => MouseMove?.Invoke(this, e);
+            interactionsManager.MouseClick += (s, e) => MouseClick?.Invoke(this, e);
 
             mapScreenScaler.Scale = Vector2.One;
             mapScreenScaler.Offset = new Vector2(0, 0);
 
-            interactions.RequestRefresh += (s, e) => Redraw();
+            interactionsManager.RequestRefresh += (s, e) => Redraw();
         }
 
+
+        public MapView AddInteraction(IMapViewInteraction interaction)
+        {
+            interactionsManager.AddInteraction(interaction);
+            return this;
+        }
 
         public void Redraw()
         {

@@ -1,4 +1,5 @@
 using Mappr.Controls;
+using Mappr.Controls.Interactions;
 using Mappr.Entities;
 using Mappr.Tiles;
 using System.Diagnostics;
@@ -26,7 +27,11 @@ namespace Mappr
             CachingTileSource cashing = new CachingTileSource(scaler, (1920*1080) * 5 / (128*128));
             mapView.TileSource = cashing;
             mapView.MapEntitySource = entitySource;
-            mapMouseHandler = new MapMouseHandler(mapView, entitySource);
+            mapView
+                .AddInteraction(new Panning())
+                .AddInteraction(new Zooming());
+
+
 
             entitySource.Add(new MapEntity { MapPosition = new Vector2(100, 100) });
             entitySource.Add(new MapEntity { MapPosition = new Vector2(50, 50) });
