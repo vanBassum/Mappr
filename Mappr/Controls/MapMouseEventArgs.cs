@@ -8,7 +8,6 @@ namespace Mappr.Controls
         public CoordinateScaler2D Scaler { get; }
         public Vector2 MouseScreenPosition { get; set; }
         public Vector2 MouseMapPosition { get; set; }
-        public bool BlockMapInteractions { get; set; } = false;
         public bool RequestRedraw { get; set; } = false;
         public MouseButtons MouseButton { get; set; }
         public bool IsActive { get; set; }

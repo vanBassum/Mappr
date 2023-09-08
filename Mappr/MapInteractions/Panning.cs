@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualBasic.Devices;
+﻿using Mappr.Controls;
+using Microsoft.VisualBasic.Devices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +7,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Mappr.Controls.Interactions
+namespace Mappr.MapInteractions
 {
     internal class Panning : IMapViewInteraction
     {
@@ -25,7 +26,7 @@ namespace Mappr.Controls.Interactions
 
         }
 
-         
+
         public void HandleMouseDown(object sender, MapMouseEventArgs e)
         {
             if (e.MouseButton == MouseButtons.Left)

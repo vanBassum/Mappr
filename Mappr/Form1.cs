@@ -1,6 +1,6 @@
 using Mappr.Controls;
-using Mappr.Controls.Interactions;
 using Mappr.Entities;
+using Mappr.MapInteractions;
 using Mappr.Tiles;
 using System.Diagnostics;
 using System.Net;
@@ -13,7 +13,6 @@ namespace Mappr
         MapView mapView = new MapView();
         MapEntitySource entitySource = new MapEntitySource();
         PlayerEntity playerEntity = new PlayerEntity(new Vector2(75, 75));
-        MapMouseHandler mapMouseHandler;
         public Form1()
         {
             InitializeComponent();
@@ -28,8 +27,10 @@ namespace Mappr
             mapView.TileSource = cashing;
             mapView.MapEntitySource = entitySource;
             mapView
+                .AddInteraction(new EntityDragging(entitySource))
+                .AddInteraction(new EntityHover(entitySource))
                 .AddInteraction(new Panning())
-                .AddInteraction(new Zooming());
+                .AddInteraction(new Zooming(a=>a.WithMinZoom(1f).WithMaxZoom(64f).WithZoomFactor(1.5f)));
 
 
 

@@ -18,7 +18,6 @@ namespace Mappr.Controls
         public void RenderTiles(Graphics g, ITileSource TileSource, Vector2 screenSize)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
-            Stopwatch load = new Stopwatch();
             var topleftscreen = Vector2.Zero;
             //screenSize = new Vector2(600, 600);
             float zoomLevel = mapToScreen.Scale.X;
@@ -38,7 +37,6 @@ namespace Mappr.Controls
             int lastTileX = (int)Math.Ceiling(screenBottomRight.X / tileSizeInMapCoords.X);
             int lastTileY = (int)Math.Ceiling(screenBottomRight.Y / tileSizeInMapCoords.Y);
 
-            TimeSpan t = new TimeSpan();
             g.Clear(Color.FromArgb(0x0D, 0x2B, 0x4F));
 
             // Loop through each visible tile and render it
@@ -55,10 +53,7 @@ namespace Mappr.Controls
                         int yPos = (int)Math.Ceiling(tileScreenPosition.Y);
 
                         // Scale the tile based on the scaling factor
-                        load.Restart();
                         g.DrawImage(tile.Bitmap, xPos, yPos);
-                        load.Stop();
-                        t += load.Elapsed;
                     }
                 }
             }
@@ -67,7 +62,10 @@ namespace Mappr.Controls
             stopwatch.Stop();
             Font font = new Font("Arial", 12);
             Brush brush = Brushes.Yellow; // You can choose a different color
-            g.DrawString($"Tiles: {stopwatch.ElapsedMilliseconds} {t.TotalMilliseconds}", font, brush, 0, 0);
+            float h = font.Height;
+            g.DrawString($"Tiles: {stopwatch.Elapsed.TotalMilliseconds}", font, brush, 0, h * 0);
+            g.DrawString($"Scale: {mapToScreen.Scale}", font, brush, 0, h * 1);
+            //g.DrawString($"Offset: {mapToScreen.Offset}", font, brush, 0, h * 2);
         }
     }
 }

@@ -39,6 +39,15 @@ namespace Mappr.Entities
             g.DrawLine(pen, startPointHorizontal, endPointHorizontal);
             g.DrawLine(pen, startPointVertical, endPointVertical);
         }
+
+
+        public bool IsMouseWithinEntityBounds(MapMouseEventArgs e)
+        {
+            float radius = 5f;
+            var eScreen = e.Scaler.ApplyTransformation(MapPosition);
+            return e.MouseScreenPosition.X >= eScreen.X - radius && e.MouseScreenPosition.X <= eScreen.X + radius
+                && e.MouseScreenPosition.Y >= eScreen.Y - radius && e.MouseScreenPosition.Y <= eScreen.Y + radius;
+        }
     }
 
 
