@@ -79,10 +79,9 @@ namespace Mappr.Controls
         }
 
 
-        public MapView AddInteraction(IMapViewInteraction interaction)
+        public void ConfigInteractions(Action<MapViewInteractionsManager> config)
         {
-            interactionsManager.AddInteraction(interaction);
-            return this;
+            config.Invoke(interactionsManager);
         }
 
         public void Redraw()

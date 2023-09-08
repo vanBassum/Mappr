@@ -1,7 +1,7 @@
 ﻿using Mappr.Extentions;
 using System.Numerics;
 
-namespace Mappr.Misc
+namespace Mappr.Controls
 {
     public class ContextMenuManager<T>
     {

@@ -18,12 +18,13 @@ namespace Mappr.MapInteractions
 
         public void HandleMouseClick(object sender, MapMouseEventArgs e)
         {
-
+            e.IsActive = isDragging;
         }
 
         public void HandleMouseWheel(object sender, MapMouseEventArgs e)
         {
 
+            e.IsActive = isDragging;
         }
 
 
