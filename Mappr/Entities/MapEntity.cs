@@ -1,22 +1,30 @@
 ﻿using System.Numerics;
+using Mappr.Controls;
 
-namespace Mappr.Controls
+namespace Mappr.Entities
 {
     public class MapEntity : IDrawable
     {
+        public bool MouseHover { get; set; }
         public Vector2 MapPosition { get; set; }
 
         public void Draw(Graphics g, Vector2 screenPos)
         {
-            
+
         }
 
         virtual public void Draw(Graphics g, CoordinateScaler2D scaler, Vector2 screenSize)
         {
             var screenPos = scaler.ApplyTransformation(MapPosition);
             bool isObjectOnScreen = screenPos.X >= 0 && screenPos.Y >= 0 && screenPos.X < screenSize.X && screenPos.Y < screenSize.Y;
-            if(isObjectOnScreen)
-                DrawCross(g, Pens.Red, screenPos);
+            if (isObjectOnScreen)
+            {
+                if(MouseHover)
+                    DrawCross(g, Pens.Blue, screenPos);
+                else
+                    DrawCross(g, Pens.Red, screenPos);
+            }
+                
         }
 
         void DrawCross(Graphics g, Pen pen, Vector2 screenPos, int crossSize = 10)

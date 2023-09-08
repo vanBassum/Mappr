@@ -1,4 +1,6 @@
-﻿namespace Mappr.Controls
+﻿using Mappr.Controls;
+
+namespace Mappr.Entities
 {
     public class MapEntitySource
     {

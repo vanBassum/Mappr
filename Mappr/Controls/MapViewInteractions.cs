@@ -1,5 +1,6 @@
 ﻿using Mappr.Extentions;
 using System.Numerics;
+using System.Windows.Forms;
 
 namespace Mappr.Controls
 {
@@ -9,6 +10,7 @@ namespace Mappr.Controls
         public event EventHandler<MapMouseEventArgs> MouseDown;
         public event EventHandler<MapMouseEventArgs> MouseUp;
         public event EventHandler<MapMouseEventArgs> MouseMove;
+        public event EventHandler<MapMouseEventArgs> MouseClick;
         public event EventHandler RequestRefresh;
         private bool isDragging = false;
         private Point lastMouseLocation;
@@ -24,20 +26,13 @@ namespace Mappr.Controls
             control.MouseDown += (s, e) =>  HandleMouseDown(e);
             control.MouseUp += (s, e) =>    HandleMouseUp(e);
             control.MouseMove += (s, e) =>  HandleMouseMove(e);
+            control.MouseClick += (s, e) => HandleMouseClick(e);
         }
 
-        MapMouseEventArgs GetArgs(Vector2 screenPos)
-        {
-            return new MapMouseEventArgs(mapScreenScaler)
-            {
-                MapPosition = mapScreenScaler.ReverseTransformation(screenPos),
-                ScreenPosition = screenPos,
-            };
-        }
 
         public void HandleMouseWheel(MouseEventArgs e)
         {
-            MapMouseEventArgs args = GetArgs(e.Location.ToVector2());
+            MapMouseEventArgs args = new MapMouseEventArgs(e, mapScreenScaler);
             MouseWheel?.Invoke(this, args);
             if (args.RequestRedraw) RequestRefresh?.Invoke(this, EventArgs.Empty);
             if (args.BlockMapInteractions) return;
@@ -62,7 +57,7 @@ namespace Mappr.Controls
 
         public void HandleMouseDown(MouseEventArgs e)
         {
-            MapMouseEventArgs args = GetArgs(e.Location.ToVector2());
+            MapMouseEventArgs args = new MapMouseEventArgs(e, mapScreenScaler);
             MouseDown?.Invoke(this, args);
             if (args.RequestRedraw) RequestRefresh?.Invoke(this, EventArgs.Empty);
             if (args.BlockMapInteractions) return;
@@ -76,7 +71,7 @@ namespace Mappr.Controls
 
         public void HandleMouseUp(MouseEventArgs e)
         {
-            MapMouseEventArgs args = GetArgs(e.Location.ToVector2());
+            MapMouseEventArgs args = new MapMouseEventArgs(e, mapScreenScaler);
             MouseUp?.Invoke(this, args);
             if (args.RequestRedraw) RequestRefresh?.Invoke(this, EventArgs.Empty);
             if (args.BlockMapInteractions) return;
@@ -89,7 +84,7 @@ namespace Mappr.Controls
 
         public void HandleMouseMove(MouseEventArgs e)
         {
-            MapMouseEventArgs args = GetArgs(e.Location.ToVector2());
+            MapMouseEventArgs args = new MapMouseEventArgs(e, mapScreenScaler);
             MouseMove?.Invoke(this, args);
             if (args.RequestRedraw) RequestRefresh?.Invoke(this, EventArgs.Empty);
             if (args.BlockMapInteractions) return;
@@ -103,20 +98,30 @@ namespace Mappr.Controls
                 RequestRefresh?.Invoke(this, EventArgs.Empty); // Trigger refresh event
             }
         }
+
+        public void HandleMouseClick(MouseEventArgs e)
+        {
+            MapMouseEventArgs args = new MapMouseEventArgs(e, mapScreenScaler);
+            MouseClick?.Invoke(this, args);
+            if (args.RequestRedraw) RequestRefresh?.Invoke(this, EventArgs.Empty);
+            if (args.BlockMapInteractions) return;
+        }
     }
 
     public class MapMouseEventArgs
     {
         public CoordinateScaler2D Scaler { get; }
-        public Vector2 ScreenPosition { get; set; }
-        public Vector2 MapPosition { get; set; }
+        public Vector2 MouseScreenPosition { get; set; }
+        public Vector2 MouseMapPosition { get; set; }
         public bool BlockMapInteractions { get; set; } = false;
         public bool RequestRedraw { get; set; } = false;
-        public MapMouseEventArgs(CoordinateScaler2D scaler)
+        public MouseButtons MouseButton { get; set; }
+        public MapMouseEventArgs(MouseEventArgs e, CoordinateScaler2D scaler)
         {
             Scaler = scaler;
+            MouseScreenPosition = e.Location.ToVector2();
+            MouseMapPosition = scaler.ReverseTransformation(MouseScreenPosition);
+            MouseButton = e.Button;
         }
-
-
     }
 }

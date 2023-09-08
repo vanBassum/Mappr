@@ -1,4 +1,5 @@
-﻿using Mappr.Extentions;
+﻿using Mappr.Entities;
+using Mappr.Extentions;
 using Mappr.Tiles;
 using System.Numerics;
 
@@ -10,6 +11,7 @@ namespace Mappr.Controls
         public new event EventHandler<MapMouseEventArgs> MouseDown;
         public new event EventHandler<MapMouseEventArgs> MouseUp;
         public new event EventHandler<MapMouseEventArgs> MouseMove;
+        public new event EventHandler<MapMouseEventArgs> MouseClick;
 
         private readonly PictureBox pbTiles;
         private readonly PictureBox pbOverlay;
@@ -68,6 +70,7 @@ namespace Mappr.Controls
             interactions.MouseDown += (s, e) => MouseDown?.Invoke(this, e);
             interactions.MouseUp += (s, e) => MouseUp?.Invoke(this, e);
             interactions.MouseMove += (s, e) => MouseMove?.Invoke(this, e);
+            interactions.MouseClick += (s, e) => MouseClick?.Invoke(this, e);
 
             mapScreenScaler.Scale = Vector2.One;
             mapScreenScaler.Offset = new Vector2(0, 0);
