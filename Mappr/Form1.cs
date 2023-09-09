@@ -5,6 +5,7 @@ using Mappr.Kernel;
 using Mappr.MapInteractions;
 using Mappr.Tiles;
 using System.Numerics;
+using System.Threading.Tasks.Dataflow;
 
 namespace Mappr
 {
@@ -69,38 +70,66 @@ namespace Mappr
             entitySource.Add(new MapEntity { MapPosition = new Vector2(50, 50) });
             entitySource.Add(playerEntity);
 
-            
+
 
             timer.Interval = 100;
             timer.Elapsed += Timer_Elapsed;
             timer.Start();
 
+            //MapDownloader downlaoder = new MapDownloader();
+            //downlaoder.Download(7, 64);
+
+
+            worldPoints.AddRange(new Vector2[] {
+                new Vector2(3259.0862f, 5148.1704f),
+                 new Vector2(-1660.7303f, -1029.1011f),
+            });
+
+            mapPoints.AddRange(new Vector2[] {
+                new Vector2(105.21094f, 46.25f),
+                 new Vector2(35.265625f, 134.11719f),
+            });
+            scaler2 = CoordinateRegression.Fit(worldPoints.ToArray(), mapPoints.ToArray());
+            Start();
         }
+
+
+        public void Start()
+        {
+            Task.Run(() =>
+            {
+                while (true)
+                {
+                    if (!memoryManager.IsAttached())
+                    {
+                        if (!memoryManager.attach("GTA5"))
+                            return;
+                    }
+
+                    IntPtr xAddr = memoryManager.GetProcessBase() + 0x1D9F800;
+                    IntPtr yAddr = memoryManager.GetProcessBase() + 0x1D9F804;
+
+                    playerWorldPos = new Vector2(
+                        memoryManager.Read_Float(xAddr),
+                        memoryManager.Read_Float(yAddr));
+
+                    if (scaler2 == null)
+                        return;
+                    var playerMapPos = scaler2.ApplyTransformation(playerWorldPos);
+                    playerEntity.MapPosition = playerMapPos;
+                    mapView.InvokeIfRequired(() =>
+                    {
+                        mapView.SetCenter(playerMapPos);
+                        mapView.Redraw();
+                    });
+                }
+            });
+        }
+
 
         private void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            if (!memoryManager.IsAttached())
-            {
-                if (!memoryManager.attach("GTA5"))
-                    return;
-            }
-
-            IntPtr xAddr = memoryManager.GetProcessBase() + 0x1D9F800;
-            IntPtr yAddr = memoryManager.GetProcessBase() + 0x1D9F804;
-
-            playerWorldPos = new Vector2(
-                memoryManager.Read_Float(xAddr),
-                memoryManager.Read_Float(yAddr));
-
-            if (scaler2 == null)
-                return;
-            var playerMapPos = scaler2.ApplyTransformation(playerWorldPos);
-            playerEntity.MapPosition = playerMapPos;
-            mapView.InvokeIfRequired(() =>
-            {
-                mapView.SetCenter(playerMapPos);
-                mapView.Redraw();
-            });
+            
         }
     }
 }
