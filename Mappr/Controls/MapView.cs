@@ -72,7 +72,7 @@ namespace Mappr.Controls
             interactionsManager.MouseMove += (s, e) => MouseMove?.Invoke(this, e);
             interactionsManager.MouseClick += (s, e) => MouseClick?.Invoke(this, e);
 
-            mapScreenScaler.Scale = Vector2.One;
+            mapScreenScaler.Scale = Vector2.One * 8;
             mapScreenScaler.Offset = new Vector2(0, 0);
 
             interactionsManager.RequestRefresh += (s, e) => Redraw();
@@ -82,6 +82,13 @@ namespace Mappr.Controls
         public void ConfigInteractions(Action<MapViewInteractionsManager> config)
         {
             config.Invoke(interactionsManager);
+        }
+
+        public void SetCenter(Vector2 mapCoords)
+        {
+            var screenCoords = mapScreenScaler.ApplyTransformation(mapCoords);
+            var screenCenter = ClientSize.ToVector2() / 2;
+            mapScreenScaler.Offset += (screenCenter - screenCoords);
         }
 
         public void Redraw()

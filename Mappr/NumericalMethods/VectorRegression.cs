@@ -19,7 +19,7 @@ namespace Mappr.Controls
     public class VectorRegression
     {
         private List<CoordinateSet> coordinateSets;
-        private Vector<float> coefficients;
+        private float[] coefficients;
 
         public VectorRegression(List<CoordinateSet> coordinateSets)
         {
@@ -30,7 +30,7 @@ namespace Mappr.Controls
             coefficients = CalculateCoefficients();
         }
 
-        public Vector<float> CalculateCoefficients()
+        public float[] CalculateCoefficients()
         {
             if (coordinateSets.Count < 2)
                 throw new ArgumentException("Invalid input data. The list of coordinate sets must have at least two elements.");
@@ -54,7 +54,7 @@ namespace Mappr.Controls
             float a = (numSamples * sumXY - sumX * sumY) / (numSamples * sumXX - sumX * sumX);
             float b = (sumY - a * sumX) / numSamples;
 
-            return new Vector<float>(new float[] { b, a });
+            return new float[] { b, a };
         }
 
         public Vector2 WorldToMap(Vector2 world)
