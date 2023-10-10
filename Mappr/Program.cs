@@ -1,4 +1,4 @@
-namespace Mappr.Kernel
+namespace Mappr
 {
     internal static class Program
     {
