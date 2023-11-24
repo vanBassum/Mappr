@@ -34,10 +34,11 @@
             // 
             // pictureBox1
             // 
+            pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pictureBox1.BorderStyle = BorderStyle.FixedSingle;
-            pictureBox1.Location = new Point(131, 62);
+            pictureBox1.Location = new Point(12, 12);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(788, 476);
+            pictureBox1.Size = new Size(1114, 725);
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             // 
@@ -45,7 +46,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1142, 713);
+            ClientSize = new Size(1138, 749);
             Controls.Add(pictureBox1);
             Name = "Form1";
             Text = "Form1";

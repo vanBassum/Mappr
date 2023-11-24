@@ -6,20 +6,26 @@ using System.Xml.Serialization;
 namespace EngineLib.Core
 {
 
-    public class GameObject
+    public class GameObject : IStartable, IUpdateable, IAwakable
     {
         private List<IComponent> components = new List<IComponent>();
         private List<GameObject> children = new List<GameObject>();
 
         public Transform Transform { get; private set; }
         public GameObject? Parent { get; private set; }
-
+        public Scene? Scene { get; private set; }
         public IEnumerable<GameObject> Children => children;
 
 
         public GameObject()
         {
             Transform = new Transform();
+        }
+
+        public GameObject(Scene scene)
+        {
+            Transform = new Transform();
+            Scene = scene;
         }
 
         public void AddChild(GameObject child)
@@ -36,11 +42,13 @@ namespace EngineLib.Core
 
             child.Parent = this;
             children.Add(child);
-            child.Start();
+            child.Awake();
+            PassNew(child);
         }
 
         public virtual void Start() { }
         public virtual void Update() { }
+        public virtual void Awake() { }
 
         public T AddComponent<T>() where T : IComponent, new()
         {
@@ -49,11 +57,18 @@ namespace EngineLib.Core
             if (component is MonoBehaviour mono)
             {
                 mono.GameObject = this;
+                mono.Awake();
+                PassNew(mono);
             }
             components.Add(component);
             return component;
         }
 
+        public void PassNew(IStartable startable)
+        {
+            Parent?.PassNew(startable);
+            Scene?.PassNew(startable);
+        }
 
         public static GameObject? RootObject { private get; set; }
 

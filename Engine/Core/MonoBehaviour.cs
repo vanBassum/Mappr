@@ -1,7 +1,10 @@
 ﻿
 namespace EngineLib.Core
 {
-    public class MonoBehaviour : IComponent
+
+
+
+    public class MonoBehaviour : IComponent, IStartable, IUpdateable, IAwakable
     {
         public GameObject GameObject { get; set; }
         public MonoBehaviour()
@@ -10,7 +13,7 @@ namespace EngineLib.Core
 
         public virtual void Start() { }
         public virtual void Update() { }
-
+        public virtual void Awake() { }
     }
 
 }

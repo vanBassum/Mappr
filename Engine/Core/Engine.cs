@@ -3,11 +3,13 @@ using EngineLib.Statics;
 using EngineLib.Capture;
 using EngineLib.Rendering;
 using System.Xml.Serialization;
+using System.Diagnostics;
 
 namespace EngineLib.Core
 {
     public class Engine
     {
+        public event EventHandler<TimeSpan> onFrame;
         private TickTask? task;
         private Scene? scene;
         public Engine()
@@ -26,17 +28,23 @@ namespace EngineLib.Core
 
         void Loop(TimeInfo timeInfo)
         {
+            Stopwatch stopwatch = Stopwatch.StartNew();
             Time.DeltaTime = timeInfo.DeltaTime;
             Time.TimeSinceStart = timeInfo.TimeSinceStart;
 
             if (scene?.RootObject == null)
                 return;
             Update(scene.RootObject);
+            stopwatch.Stop();
+            onFrame?.Invoke(this, stopwatch.Elapsed);
         }
 
 
         void Update(GameObject go)
         {
+            while(scene?.Startables?.TryDequeue(out var startable)??false)
+                startable.Start();
+
             go.Update();
 
             var monos = go.GetComponent<MonoBehaviour>();
@@ -46,7 +54,5 @@ namespace EngineLib.Core
             foreach (var child in go.Children)
                 Update(child);
         }
-
-
     }
 }

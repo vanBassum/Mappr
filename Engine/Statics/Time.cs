@@ -1,4 +1,7 @@
-﻿namespace EngineLib.Statics
+﻿using EngineLib.Core;
+using System.Dynamic;
+
+namespace EngineLib.Statics
 {
     public class Time
     {

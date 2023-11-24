@@ -1,9 +1,15 @@
-﻿namespace EngineLib.Core
+﻿using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+
+namespace EngineLib.Core
 {
     public class Scene
     {
-        public GameObject RootObject { get; } = new GameObject();
+        public Queue<IStartable> Startables { get; } = new Queue<IStartable> { };
+        public GameObject RootObject { get; }
 
+        public Scene() { 
+            RootObject = new GameObject(this);
+        }  
 
         public IEnumerable<GameObject> GetGameObjects()
         {
@@ -20,6 +26,11 @@
                     queue.Enqueue(child);
                 }
             }
+        }
+
+        public void PassNew(IStartable startable)
+        {
+            Startables.Enqueue(startable);
         }
     }
 }

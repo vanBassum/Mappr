@@ -1,88 +1,167 @@
 using EngineLib.Core;
 using EngineLib.Rendering;
 using EngineLib.Statics;
+using System.ComponentModel;
 using System.Numerics;
 using System.Threading.Tasks.Dataflow;
+using static Mappr.Form1;
 
 namespace Mappr
 {
     public partial class Form1 : Form
     {
         Engine engine;
-
+        public static Random Random = new Random();
+        FloatAverageCalculator avg = new FloatAverageCalculator(15);
         public Form1()
         {
             InitializeComponent();
 
             engine = new Engine();
             engine.Load(CreateScene());
+            engine.onFrame += Engine_onFrame;
+        }
+
+        private void Engine_onFrame(object? sender, TimeSpan e)
+        {
+            this.InvokeIfRequired(() =>
+            {
+
+                this.Text = avg.Add((float)e.TotalMilliseconds).ToString();
+            });
         }
 
         Scene CreateScene()
         {
             Scene scene = new Scene();
 
-            scene.RootObject.AddChild(new Coin());
 
+            for (int i = 0; i < 100; i++)
+            {
+                var coin = new Coin();
+                scene.RootObject.AddChild(coin);
+
+                MoveToRandom moveToRandom = coin.AddComponent<MoveToRandom>();
+                moveToRandom.Max = new Vector2(pictureBox1.Width, pictureBox1.Height);
+
+                //coin.bobbing.EndPos = new Vector2(Random.Next(pictureBox1.Width), Random.Next(pictureBox1.Height));
+                coin.rotator.speed = (float)(Random.NextDouble() * Math.PI);
+                coin.Transform.Position = new Vector2(Random.Next(pictureBox1.Width), Random.Next(pictureBox1.Height));
+
+            }
+
+
+            //scene.RootObject.AddChild(new Coin());
             var cam = new Camera(pictureBox1);
             scene.RootObject.AddChild(cam);
-            cam.AddComponent<Bobbing2>();
-
-
-
+            //cam.AddComponent<Bobbing2>();
 
             return scene;
         }
 
+        public class MoveToRandom : MonoBehaviour
+        {
+            public float Speed { get; set; } = 25f;      //px per second
+            public Vector2 Max { get; set; }
+
+            Vector2 moveTo;
+
+            StaticLinesRenderer LinesRenderer { get; set; }
+
+            public override void Start()
+            {
+                LinesRenderer = GameObject.AddComponent<StaticLinesRenderer>();
+                LinesRenderer.Pen = Pens.Red;   
+                NewDestination();
+            }
+
+            public override void Update()
+            {
+                var distance = Speed * Time.DeltaTime;
+                var step = moveTo - GameObject.Transform.Position;
+
+                if (step.Length() < distance)
+                {
+                    NewDestination();
+                }
+                else
+                {
+                    step = Vector2.Normalize(step) * distance;
+                }
+
+                GameObject.Transform.Position += step;
+
+                LinesRenderer.Points = new Vector2[] { GameObject.Transform.Position, moveTo };
+            }
+
+            void NewDestination()
+            {
+                moveTo = new Vector2(Random.Next((int)Max.X), Random.Next((int)Max.Y));
+            }
+
+        }
 
         public class Bobbing : MonoBehaviour
         {
-            float speed = 10f;      //px per second
-            Vector2 velocity = Vector2.Zero;
+            float speed = 25f;      //px per second
+            Vector2 startPos;
+            public Vector2 EndPos { get; set; }
+
+            Vector2 moveTo;
+
+            public override void Start()
+            {
+                startPos = GameObject.Transform.Position;
+                moveTo = EndPos;
+            }
 
             public override void Update()
             {
-                GameObject.Transform.Position += velocity * Time.DeltaTime;
-                
-                if (GameObject.Transform.Position.X > 100)
-                    velocity = Vector2.UnitX * -speed;
-                
-                if (GameObject.Transform.Position.X < 20)
-                    velocity = Vector2.UnitX * speed;
+                var distance = speed * Time.DeltaTime;
+                var step = moveTo - GameObject.Transform.Position;
+
+                if (step.Length() < distance)
+                {
+                    if (moveTo == EndPos)
+                        moveTo = startPos;
+                    else
+                        moveTo = EndPos;
+                }
+                else
+                {
+                    step = Vector2.Normalize(step) * distance;
+                }
+
+                GameObject.Transform.Position += step;
             }
         }
 
-        public class Bobbing2 : MonoBehaviour
+        public class Rotator : MonoBehaviour
         {
-            float speed = 10f;      //px per second
-            Vector2 velocity = Vector2.Zero;
-
+            public float speed = 1;
             public override void Update()
             {
-                GameObject.Transform.Position += velocity * Time.DeltaTime;
-
-                if (GameObject.Transform.Position.Y > 100)
-                    velocity = Vector2.UnitY * -speed;
-
-                if (GameObject.Transform.Position.Y < 20)
-                    velocity = Vector2.UnitY * speed;
+                GameObject.Transform.Rotation += speed * Time.DeltaTime;
             }
         }
-
 
         public class Coin : GameObject
         {
             LinesRenderer? renderer;
-            Bobbing? bobbing;
+            public Rotator? rotator;
 
-            public Coin()
+            public override void Awake()
             {
                 renderer = AddComponent<LinesRenderer>();
-                renderer.Points = CreateCircleMesh(20).ToArray();
-
-                bobbing = AddComponent<Bobbing>();
-                Transform.Position = new Vector2(0, 100);
+                renderer.Points = CreateCircleMesh(10).ToArray();
+                rotator = AddComponent<Rotator>();
             }
+
+            public override void Start()
+            {
+
+            }
+
 
             List<Vector2> CreateCircleMesh(float radius)
             {
@@ -90,7 +169,7 @@ namespace Mappr
                 int numPoints = 6;
                 List<Vector2> pointsList = new List<Vector2>();
 
-                for (int i = 0; i < numPoints + 1; i++)
+                for (int i = 0; i < numPoints; i++)
                 {
                     float angle = (float)i / numPoints * 2 * MathF.PI;
                     float x = radius * MathF.Cos(angle);
@@ -102,5 +181,49 @@ namespace Mappr
         }
 
 
+
     }
+    public static class Ext
+    {
+        public static void InvokeIfRequired(this ISynchronizeInvoke obj, MethodInvoker action)
+        {
+            if (obj.InvokeRequired)
+            {
+                var args = new object[0];
+                obj.Invoke(action, args);
+            }
+            else
+            {
+                action();
+            }
+        }
+    }
+
+    public class FloatAverageCalculator
+    {
+        private float[] values;
+        private int index;
+        private float sum;
+
+        public FloatAverageCalculator(int capacity)
+        {
+            values = new float[capacity];
+            index = 0;
+            sum = 0;
+        }
+
+        public float Add(float value)
+        {
+            sum -= values[index];
+            values[index] = value;
+            sum += value;
+            index++;
+            if (index >= values.Length)
+                index = 0;
+            return sum / (float)values.Length;
+
+        }
+    }
+
+
 }
