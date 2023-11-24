@@ -1,37 +1,59 @@
 ﻿namespace EngineLib.Core
 {
+
     public class GameObject
     {
-        private readonly List<IComponent> Components = new List<IComponent>();
+        private List<IComponent> components = new List<IComponent>();
+        private List<GameObject> children = new List<GameObject>();
 
-        public void AddComponent(IComponent component)
+        public Transform Transform { get; private set; }
+        public GameObject? Parent { get; private set; }
+
+        public IEnumerable<GameObject> Children => children;
+
+
+        public GameObject()
         {
-            Components.Add(component);
-
+            Transform = new Transform();
         }
 
-        public void Update()
+        public void AddChild(GameObject child)
         {
-            OnUpdate();
-            foreach (var component in Components)
+            if (child == null)
             {
-                component.Update();
+                throw new ArgumentNullException(nameof(child));
             }
+
+            if (child.Parent != null)
+            {
+                throw new InvalidOperationException("GameObject already has a parent.");
+            }
+
+            child.Parent = this;
+            children.Add(child);
+            child.Start();
         }
 
-        protected virtual void OnUpdate()
+        protected T AddComponent<T>() where T : IComponent, new()
         {
-            
+            T instance = new T();
+            components.Add(instance);
+            return instance;
         }
 
-        public T? GetComponent<T>() where T : class, IComponent
-        {
-            return Components.Find(c => c is T) as T;
-        }
+        public virtual void Start() { }
+        public virtual void Update() { }
 
-        public IEnumerable<T> GetComponents<T>() where T : class, IComponent
-        {
-            return Components.FindAll(c => c is T).Cast<T>();
-        }
+
+        //public T? GetComponent<T>() where T : class, IComponent
+        //{
+        //    return Components.Find(c => c is T) as T;
+        //}
+        //
+        //public IEnumerable<T> GetComponents<T>() where T : class, IComponent
+        //{
+        //    return Components.FindAll(c => c is T).Cast<T>();
+        //}
     }
+
 }

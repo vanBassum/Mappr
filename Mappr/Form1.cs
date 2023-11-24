@@ -14,47 +14,71 @@ namespace Mappr
         {
             InitializeComponent();
 
-            engine = new Engine(pictureBox1);
-            engine.Register(new MyBall());
+            engine = new Engine();
+            engine.Load(CreateScene());
+        }
+
+        Scene CreateScene()
+        {
+            Scene scene = new Scene();
+
+            scene.RootObject.AddChild(new Coin());
+
+            return scene;
         }
 
 
-        public class MyBall : GameObject
+        public class MonoBehaviour : IComponent
         {
-            float speed = 10f;
+            public GameObject GameObject { get; set; }
+            public virtual void Start() { }
+            public virtual void Update() { }
+        }
+
+
+
+
+        public class Bobbing : MonoBehaviour
+        {
+            float speed = 10f;      //px per second
             Vector2 velocity = Vector2.Zero;
-            Vector2 position = new Vector2(0, 20);
 
-
-
-            public MyBall()
+            public override void Update()
             {
-                BasicRenderer renderer = new BasicRenderer(Render);
-                this.AddComponent(renderer);
-            }
+                GameObject.Transform.Position += velocity * Time.DeltaTime;
 
-
-            protected override void OnUpdate()
-            {
-                position += velocity * Time.DeltaTime;
-
-                if (position.X > 100)
+                if (GameObject.Transform.Position.X > 100)
                     velocity = Vector2.UnitX * -speed;
 
-                if (position.X < 10)
+                if (GameObject.Transform.Position.X < 10)
                     velocity = Vector2.UnitX * speed;
-            }
-
-            void Render(V2Graphics g)
-            {
-                g.DrawCircle(position, 5);
             }
         }
 
+
+
+        public class Coin : GameObject
+        {
+            MeshRenderer? renderer;
+            Bobbing? bobbing;
+
+            public override void Start()
+            {
+                renderer = AddComponent<MeshRenderer>();
+                renderer.Mesh = CreateCircleMesh(5);
+
+                bobbing = AddComponent<Bobbing>();  
+            }
+
+            Mesh CreateCircleMesh(float radius)
+            {
+                // Assuming some circle mesh creation logic here
+                Mesh mesh = new Mesh();
+                mesh.Points = new Vector2[] { new Vector2 { X = 0, Y = 0 }, new Vector2 { X = radius, Y = 0 } };
+                return mesh;
+            }
+
+
+        }
     }
-
-
-
-
-
 }

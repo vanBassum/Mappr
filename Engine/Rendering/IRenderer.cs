@@ -2,8 +2,8 @@
 
 namespace EngineLib.Rendering
 {
-    public interface IRenderer : IComponent
+    interface IRenderer : IComponent
     {
-        void Render(V2Graphics g);
+
     }
 }

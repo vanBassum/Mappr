@@ -7,50 +7,33 @@ namespace EngineLib.Core
 {
     public class Engine
     {
-        private readonly PictureBox pictureBox;
-        private readonly TickTask task;
-        private readonly MouseCapturing mouseCapturing;
-        private readonly List<GameObject> gameObjects;
-        public Engine(PictureBox pictureBox)
+        private TickTask task;
+        private Scene? scene;
+        public Engine()
         {
-            this.pictureBox = pictureBox;
-            gameObjects = new List<GameObject>();
-            mouseCapturing = new MouseCapturing(pictureBox);
-            pictureBox.Paint += (s, e) => Render(e.Graphics);
 
-            task = new TickTask(Loop);
-            task.TickInterval = TimeSpan.FromSeconds(1f / 30f);  
         }
 
-        public void Register(GameObject gameObject)
+        public void Load(Scene scene)
         {
-            gameObjects.Add(gameObject);    
+            task?.Stop();
+            this.scene = scene;
+            Startup();
+            task = new TickTask(Loop);
+            task.TickInterval = TimeSpan.FromSeconds(1f / 30f);
         }
 
         void Loop(TimeInfo timeInfo)
         {
             Time.DeltaTime = timeInfo.DeltaTime;
             Time.TimeSinceStart = timeInfo.TimeSinceStart;
-            Input.Mouse = mouseCapturing.GetMouseState();
 
-            Update();
-            pictureBox.Refresh();
-        }
+            if (scene == null)
+                return;
 
-
-        private void Update()
-        {
-            foreach (GameObject gameObject in gameObjects)
-                gameObject.Update();    
-        }
-
-        private void Render(Graphics g)
-        {
-            V2Graphics graphics = new V2Graphics(g);
-            var renderers = gameObjects.SelectMany(go => go.GetComponents<IRenderer>());
-            foreach (var renderer in renderers)
+            foreach(var obj in scene.GetGameObjects())
             {
-                renderer.Render(graphics);
+                obj.Update();
             }
         }
     }
