@@ -28,8 +28,14 @@ namespace EngineLib.Core
             Scene = scene;
         }
 
-        public void AddChild(GameObject child)
+        public T AddChild<T>() where T : GameObject, new()
         {
+            return AddChild(new T());
+        }
+
+        public T AddChild<T>(T child) where T : GameObject
+        {
+
             if (child == null)
             {
                 throw new ArgumentNullException(nameof(child));
@@ -44,6 +50,7 @@ namespace EngineLib.Core
             children.Add(child);
             child.Awake();
             PassNew(child);
+            return child;
         }
 
         public virtual void Start() { }

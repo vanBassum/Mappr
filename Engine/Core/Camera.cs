@@ -6,11 +6,13 @@ namespace EngineLib.Core
     public class Camera : GameObject
     {
         private readonly PictureBox pictureBox;
-
+        public Vector2 ViewPort { get; private set; }
         public Camera(PictureBox pictureBox)
         {
             this.pictureBox = pictureBox;
             pictureBox.Paint += PictureBox_Paint;
+            ViewPort = new Vector2(pictureBox.Width, pictureBox.Height);
+            pictureBox.Resize += (s,e) => ViewPort = new Vector2(pictureBox.Width, pictureBox.Height);
         }
 
         public override void Update() 

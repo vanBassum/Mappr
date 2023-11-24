@@ -1,14 +1,14 @@
 using EngineLib.Core;
 using Mappr.Meuk;
+using Mappr.Tiles;
 using System.Numerics;
-using System.Runtime.Intrinsics;
 
 namespace Mappr
 {
     public partial class Form1 : Form
     {
         Engine engine;
-        
+
         FloatAverageCalculator avg = new FloatAverageCalculator(15);
         public Form1()
         {
@@ -32,11 +32,14 @@ namespace Mappr
         {
             Scene scene = new Scene();
 
+            var tileMap = scene.RootObject.AddChild<TileMap>();
+            //tileMap.Transform.Position = new Vector2(100, 0);
+            tileMap.Transform.Scale = Vector2.One * 64f;
+
 
             for (int i = 0; i < 10; i++)
             {
-                var coin = new Coin();
-                scene.RootObject.AddChild(coin);
+                var coin = scene.RootObject.AddChild<Coin>();
 
                 MoveToRandom moveToRandom = coin.AddComponent<MoveToRandom>();
                 moveToRandom.Max = new Vector2(pictureBox1.Width, pictureBox1.Height);
@@ -44,13 +47,13 @@ namespace Mappr
                 //coin.bobbing.EndPos = new Vector2(Random.Next(pictureBox1.Width), Random.Next(pictureBox1.Height));
                 coin.rotator.speed = (float)(RANDOM.Random.NextDouble() * Math.PI);
                 coin.Transform.Position = new Vector2(RANDOM.Random.Next(pictureBox1.Width), RANDOM.Random.Next(pictureBox1.Height));
-
+                //coin.Transform.Scale = Vector2.One * 0.5f;
             }
 
 
             //scene.RootObject.AddChild(new Coin());
             var cam = new Camera(pictureBox1);
-            cam.Transform.Scale = Vector2.One;
+            cam.Transform.Scale = Vector2.One * 1f;
             scene.RootObject.AddChild(cam);
             //cam.AddComponent<Bobbing2>();
 
@@ -63,4 +66,23 @@ namespace Mappr
     }
 
 
+    public class TileMap : GameObject
+    {
+
+        TileRenderer? renderer;
+
+        public override void Awake()
+        {
+            renderer = AddComponent<TileRenderer>();
+
+            FileTileSource fileSource = new FileTileSource("maps/gta5");
+            ScalerTileSource scaler = new ScalerTileSource(fileSource);
+            CachingTileSource cashing = new CachingTileSource(scaler, (1920 * 1080) * 5 / (128 * 128));
+
+            renderer.TileSource = cashing;
+
+        }
+
+    }
+    
 }

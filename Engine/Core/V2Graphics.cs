@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using EngineLib.Extentions;
+using System.Numerics;
 
 namespace EngineLib.Core
 {
@@ -28,5 +29,14 @@ namespace EngineLib.Core
             g.DrawLines(pen, points.Select(a=> new Point((int)a.X, (int)a.Y)).ToArray());
         }
 
+        public void DrawRectange(Pen pen, Vector2 location, Vector2 size)
+        {
+            g.DrawRectangle(pen, new Rectangle( location.ToPoint(), new Size((int)size.X, (int)size.Y)));
+        }
+
+        public void DrawImage(Image image, Vector2 location)
+        {
+            g.DrawImage(image, location.ToPoint());
+        }
     }
 }
