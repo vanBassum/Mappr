@@ -1,4 +1,9 @@
-﻿namespace EngineLib.Core
+﻿
+
+using System.Diagnostics;
+using System.Xml.Serialization;
+
+namespace EngineLib.Core
 {
 
     public class GameObject
@@ -34,26 +39,58 @@
             child.Start();
         }
 
-        protected T AddComponent<T>() where T : IComponent, new()
-        {
-            T instance = new T();
-            components.Add(instance);
-            return instance;
-        }
-
         public virtual void Start() { }
         public virtual void Update() { }
 
+        public T AddComponent<T>() where T : IComponent, new()
+        {
+            T component = new T();
 
-        //public T? GetComponent<T>() where T : class, IComponent
-        //{
-        //    return Components.Find(c => c is T) as T;
-        //}
-        //
-        //public IEnumerable<T> GetComponents<T>() where T : class, IComponent
-        //{
-        //    return Components.FindAll(c => c is T).Cast<T>();
-        //}
+            if (component is MonoBehaviour mono)
+            {
+                mono.GameObject = this;
+            }
+            components.Add(component);
+            return component;
+        }
+
+
+        public static GameObject? RootObject { private get; set; }
+
+
+        public IEnumerable<T> GetComponent<T>() where T : IComponent
+        {
+            foreach (var component in components.OfType<T>())
+            {
+                yield return component;
+            }
+        }
+
+        public static IEnumerable<GameObject> FindObjectsThatHaveComponentOfType<T>() where T : IComponent
+        {
+            if (RootObject == null)
+            {
+                yield break;
+            }
+
+            Queue<GameObject> queue = new Queue<GameObject>();
+            queue.Enqueue(RootObject);
+
+            while (queue.Count > 0)
+            {
+                GameObject obj = queue.Dequeue();
+
+                // Check if the object has the desired component type
+                if (obj.components.Any(c => c is T))
+                {
+                    yield return obj;
+                }
+
+                foreach (var child in obj.Children)
+                {
+                    queue.Enqueue(child);
+                }
+            }
+        }
     }
-
 }

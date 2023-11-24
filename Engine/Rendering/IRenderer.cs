@@ -2,8 +2,8 @@
 
 namespace EngineLib.Rendering
 {
-    interface IRenderer : IComponent
+    public interface IRenderer : IComponent
     {
-
+        public void Render(V2Graphics graphics, Camera camera, GameObject gameObject);
     }
 }

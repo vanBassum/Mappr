@@ -23,5 +23,10 @@ namespace EngineLib.Core
             g.DrawEllipse(Pens.Black, circleRect);
         }
 
+        public void DrawLines(Vector2[] points)
+        {
+            g.DrawLines(Pens.Black, points.Select(a=> new Point((int)a.X, (int)a.Y)).ToArray());
+        }
+
     }
 }

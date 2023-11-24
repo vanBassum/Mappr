@@ -2,12 +2,13 @@
 using EngineLib.Statics;
 using EngineLib.Capture;
 using EngineLib.Rendering;
+using System.Xml.Serialization;
 
 namespace EngineLib.Core
 {
     public class Engine
     {
-        private TickTask task;
+        private TickTask? task;
         private Scene? scene;
         public Engine()
         {
@@ -18,7 +19,7 @@ namespace EngineLib.Core
         {
             task?.Stop();
             this.scene = scene;
-            Startup();
+            GameObject.RootObject = scene.RootObject;
             task = new TickTask(Loop);
             task.TickInterval = TimeSpan.FromSeconds(1f / 30f);
         }
@@ -28,13 +29,24 @@ namespace EngineLib.Core
             Time.DeltaTime = timeInfo.DeltaTime;
             Time.TimeSinceStart = timeInfo.TimeSinceStart;
 
-            if (scene == null)
+            if (scene?.RootObject == null)
                 return;
-
-            foreach(var obj in scene.GetGameObjects())
-            {
-                obj.Update();
-            }
+            Update(scene.RootObject);
         }
+
+
+        void Update(GameObject go)
+        {
+            go.Update();
+
+            var monos = go.GetComponent<MonoBehaviour>();
+            foreach(var mono in monos)
+                mono.Update();
+
+            foreach (var child in go.Children)
+                Update(child);
+        }
+
+
     }
 }

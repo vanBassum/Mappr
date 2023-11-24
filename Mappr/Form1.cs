@@ -24,18 +24,15 @@ namespace Mappr
 
             scene.RootObject.AddChild(new Coin());
 
+            var cam = new Camera(pictureBox1);
+            scene.RootObject.AddChild(cam);
+            cam.AddComponent<Bobbing2>();
+
+
+
+
             return scene;
         }
-
-
-        public class MonoBehaviour : IComponent
-        {
-            public GameObject GameObject { get; set; }
-            public virtual void Start() { }
-            public virtual void Update() { }
-        }
-
-
 
 
         public class Bobbing : MonoBehaviour
@@ -46,39 +43,64 @@ namespace Mappr
             public override void Update()
             {
                 GameObject.Transform.Position += velocity * Time.DeltaTime;
-
+                
                 if (GameObject.Transform.Position.X > 100)
                     velocity = Vector2.UnitX * -speed;
-
-                if (GameObject.Transform.Position.X < 10)
+                
+                if (GameObject.Transform.Position.X < 20)
                     velocity = Vector2.UnitX * speed;
             }
         }
 
+        public class Bobbing2 : MonoBehaviour
+        {
+            float speed = 10f;      //px per second
+            Vector2 velocity = Vector2.Zero;
+
+            public override void Update()
+            {
+                GameObject.Transform.Position += velocity * Time.DeltaTime;
+
+                if (GameObject.Transform.Position.Y > 100)
+                    velocity = Vector2.UnitY * -speed;
+
+                if (GameObject.Transform.Position.Y < 20)
+                    velocity = Vector2.UnitY * speed;
+            }
+        }
 
 
         public class Coin : GameObject
         {
-            MeshRenderer? renderer;
+            LinesRenderer? renderer;
             Bobbing? bobbing;
 
-            public override void Start()
+            public Coin()
             {
-                renderer = AddComponent<MeshRenderer>();
-                renderer.Mesh = CreateCircleMesh(5);
+                renderer = AddComponent<LinesRenderer>();
+                renderer.Points = CreateCircleMesh(20).ToArray();
 
-                bobbing = AddComponent<Bobbing>();  
+                bobbing = AddComponent<Bobbing>();
+                Transform.Position = new Vector2(0, 100);
             }
 
-            Mesh CreateCircleMesh(float radius)
+            List<Vector2> CreateCircleMesh(float radius)
             {
-                // Assuming some circle mesh creation logic here
-                Mesh mesh = new Mesh();
-                mesh.Points = new Vector2[] { new Vector2 { X = 0, Y = 0 }, new Vector2 { X = radius, Y = 0 } };
-                return mesh;
+                // Number of points to create the circle
+                int numPoints = 6;
+                List<Vector2> pointsList = new List<Vector2>();
+
+                for (int i = 0; i < numPoints + 1; i++)
+                {
+                    float angle = (float)i / numPoints * 2 * MathF.PI;
+                    float x = radius * MathF.Cos(angle);
+                    float y = radius * MathF.Sin(angle);
+                    pointsList.Add(new Vector2 { X = x, Y = y });
+                }
+                return pointsList;
             }
-
-
         }
+
+
     }
 }
