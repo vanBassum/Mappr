@@ -47,7 +47,7 @@ namespace EngineLib.Core
 
             go.Update();
 
-            var monos = go.GetComponent<MonoBehaviour>();
+            var monos = go.GetComponent<GameScript>();
             foreach(var mono in monos)
                 mono.Update();
 

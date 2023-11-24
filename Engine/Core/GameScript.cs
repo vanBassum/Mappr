@@ -1,13 +1,12 @@
-﻿
-namespace EngineLib.Core
+﻿namespace EngineLib.Core
 {
 
 
 
-    public class MonoBehaviour : IComponent, IStartable, IUpdateable, IAwakable
+    public class GameScript : IComponent, IStartable, IUpdateable, IAwakable
     {
         public GameObject GameObject { get; set; }
-        public MonoBehaviour()
+        public GameScript()
         {
         }
 

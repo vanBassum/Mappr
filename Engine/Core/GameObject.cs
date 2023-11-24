@@ -54,7 +54,7 @@ namespace EngineLib.Core
         {
             T component = new T();
 
-            if (component is MonoBehaviour mono)
+            if (component is GameScript mono)
             {
                 mono.GameObject = this;
                 mono.Awake();

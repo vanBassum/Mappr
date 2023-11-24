@@ -3,8 +3,7 @@ using EngineLib.Rendering;
 using EngineLib.Statics;
 using System.ComponentModel;
 using System.Numerics;
-using System.Threading.Tasks.Dataflow;
-using static Mappr.Form1;
+using System.Runtime.Intrinsics;
 
 namespace Mappr
 {
@@ -53,15 +52,16 @@ namespace Mappr
 
             //scene.RootObject.AddChild(new Coin());
             var cam = new Camera(pictureBox1);
+            cam.Transform.Scale = Vector2.One * 2f;
             scene.RootObject.AddChild(cam);
             //cam.AddComponent<Bobbing2>();
 
             return scene;
         }
 
-        public class MoveToRandom : MonoBehaviour
+        public class MoveToRandom : GameScript
         {
-            public float Speed { get; set; } = 25f;      //px per second
+            public float Speed { get; set; } = 200f;      //px per second
             public Vector2 Max { get; set; }
 
             Vector2 moveTo;
@@ -101,7 +101,7 @@ namespace Mappr
 
         }
 
-        public class Bobbing : MonoBehaviour
+        public class Bobbing : GameScript
         {
             float speed = 25f;      //px per second
             Vector2 startPos;
@@ -136,7 +136,7 @@ namespace Mappr
             }
         }
 
-        public class Rotator : MonoBehaviour
+        public class Rotator : GameScript
         {
             public float speed = 1;
             public override void Update()
