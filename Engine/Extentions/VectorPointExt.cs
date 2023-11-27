@@ -10,5 +10,8 @@ namespace EngineLib.Extentions
         public static Point ToPoint(this Vector2 point) => new Point((int)point.X, (int)point.Y);
         public static PointF ToPointF(this Vector2 point) => new PointF(point.X, point.Y);
 
+        public static Size ToSize(this Vector2 point) => new Size((int)point.X, (int)point.Y);
+        public static SizeF ToSizeF(this Vector2 point) => new SizeF(point.X, point.Y);
+
     }
 }

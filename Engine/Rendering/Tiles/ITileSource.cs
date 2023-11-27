@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Numerics;
 
-namespace Mappr.Tiles
+namespace EngineLib.Rendering.Tiles
 {
 
 

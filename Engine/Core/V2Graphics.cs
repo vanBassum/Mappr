@@ -6,37 +6,39 @@ namespace EngineLib.Core
     public class V2Graphics
     {
         private readonly Graphics g;
-        public V2Graphics(Graphics g) { 
-            this.g = g; 
+
+        public V2Graphics(Graphics g)
+        {
+            this.g = g;
         }
 
-
-        public void DrawCircle(Vector2 center, float radius)
+        public void DrawLines(Pen pen, params Vector2[] points)
         {
-            float x = center.X - radius;
-            float y = center.Y - radius;
-            float diameter = 2 * radius;
-
-            // Create a rectangle that represents the circle
-            RectangleF circleRect = new RectangleF(x, y, diameter, diameter);
-
-            // Draw the circle using Graphics object
-            g.DrawEllipse(Pens.Black, circleRect);
+            g.DrawLines(pen, points.Select(a => a.ToPoint()).ToArray());
         }
 
-        public void DrawLines(Pen pen, Vector2[] points)
+        public void DrawLine(Pen pen, Vector2 start, Vector2 end)
         {
-            g.DrawLines(pen, points.Select(a=> new Point((int)a.X, (int)a.Y)).ToArray());
+            g.DrawLine(pen, start.ToPoint(), end.ToPoint());
         }
 
-        public void DrawRectange(Pen pen, Vector2 location, Vector2 size)
+        public void DrawRectangle(Pen pen, Vector2 location, Vector2 size)
         {
-            g.DrawRectangle(pen, new Rectangle( location.ToPoint(), new Size((int)size.X, (int)size.Y)));
+            g.DrawRectangle(pen, new Rectangle(location.ToPoint(), size.ToSize()));
         }
 
         public void DrawImage(Image image, Vector2 location)
         {
             g.DrawImage(image, location.ToPoint());
         }
+
+        public void DrawCircle(Pen pen, Vector2 location, float radius)
+        {
+            RectangleF rect = new RectangleF(location.X - radius, location.Y - radius, 2 * radius, 2 * radius);
+            g.DrawEllipse(pen, rect);
+        }
     }
+
+
+
 }

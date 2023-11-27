@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Mappr.Tiles
+namespace EngineLib.Rendering.Tiles
 {
     public class TileSizeInfo
     {

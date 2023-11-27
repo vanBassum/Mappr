@@ -4,16 +4,11 @@ namespace EngineLib.Core
 {
     public class Transform
     {
-        public Vector2 Position { get; set; }
-        public float Rotation { get; set; }
-        public Vector2 Scale { get; set; }
+        public Vector2 Position { get; set; } = new Vector2();
+        public float Rotation { get; set; }  = 0f;
+        public Vector2 Scale { get; set; }   = new Vector2(1f, 1f);
 
-        public Transform()
-        {
-            Position = new Vector2();
-            Rotation = 0f;
-            Scale = new Vector2(1f, 1f);
-        }
+
 
         public Vector2 TransformPoint(Vector2 localPoint)
         {
@@ -29,6 +24,20 @@ namespace EngineLib.Core
             transformedPoint *= Scale;
 
             return transformedPoint;
+        }
+
+        public Transform Inverse()
+        {
+            Vector2 inverseScale = new Vector2(1 / Scale.X, 1 / Scale.Y);
+            float inverseRotation = -Rotation;
+            Vector2 inversePosition = -Position;
+
+            return new Transform
+            {
+                Scale = inverseScale,
+                Rotation = inverseRotation,
+                Position = inversePosition
+            };
         }
     }
 }

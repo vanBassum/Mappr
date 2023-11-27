@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
 
-namespace Mappr.Tiles
+namespace EngineLib.Rendering.Tiles
 {
     public class CachingTileSource : ITileSource
     {
@@ -31,7 +31,7 @@ namespace Mappr.Tiles
 
                 if (tile == null)
                     return null;
-                
+
                 EnsureSpace(x, y, scale);
 
                 _tileCache[(x, y, scale)] = tile;
@@ -69,7 +69,7 @@ namespace Mappr.Tiles
                 _tileCache[keyToRemove].Bitmap.Dispose();
                 _tileCache.Remove(keyToRemove);
             }
-                
+
 
             return differentScaleKeys.Count > 0; // Return true if any different-scale tiles were removed.
         }

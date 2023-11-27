@@ -12,12 +12,12 @@ namespace Mappr.Meuk
 
         Vector2 moveTo;
 
-        StaticLinesRenderer LinesRenderer { get; set; }
+        //StaticLinesRenderer LinesRenderer { get; set; }
 
         public override void Start()
         {
-            LinesRenderer = GameObject.AddComponent<StaticLinesRenderer>();
-            LinesRenderer.Pen = Pens.Red;
+            //LinesRenderer = GameObject.AddComponent<StaticLinesRenderer>();
+            //LinesRenderer.Pen = Pens.Red;
             NewDestination();
         }
 
@@ -37,7 +37,7 @@ namespace Mappr.Meuk
 
             GameObject.Transform.Position += step;
 
-            LinesRenderer.Points = new Vector2[] { GameObject.Transform.Position, moveTo };
+            //LinesRenderer.Points = new Vector2[] { GameObject.Transform.Position, moveTo };
         }
 
         void NewDestination()

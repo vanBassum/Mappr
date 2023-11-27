@@ -51,10 +51,14 @@ namespace EngineLib.Capture
         {
             lock (syncLock)
             {
+                Point mousePosition = pictureBox.PointToClient(Control.MousePosition);
+                bool isWithinBounds = pictureBox.ClientRectangle.Contains(mousePosition);
+
                 return new MouseState
                 {
                     Buttons = buttons,
-                    Position = position
+                    WorldPosition = position,
+                    IsValid = isWithinBounds
                 };
             }
         }

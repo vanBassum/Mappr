@@ -6,13 +6,13 @@ namespace Mappr.Meuk
 {
     public class Coin : GameObject
     {
-        LinesRenderer? renderer;
+        //LinesRenderer? renderer;
         public Rotator? rotator;
 
         public override void Awake()
         {
-            renderer = AddComponent<LinesRenderer>();
-            renderer.Points = CreateCircleMesh(10).ToArray();
+            //renderer = AddComponent<LinesRenderer>();
+            //renderer.Points = CreateCircleMesh(10).ToArray();
             rotator = AddComponent<Rotator>();
         }
 

@@ -59,8 +59,11 @@ namespace EngineLib.Core
 
         public T AddComponent<T>() where T : IComponent, new()
         {
-            T component = new T();
+            return AddComponent(new T());   
+        }
 
+        public T AddComponent<T>(T component) where T : IComponent
+        {
             if (component is GameScript mono)
             {
                 mono.GameObject = this;

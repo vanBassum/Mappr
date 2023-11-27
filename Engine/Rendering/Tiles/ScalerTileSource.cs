@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Mappr.Tiles
+namespace EngineLib.Rendering.Tiles
 {
     public class ScalerTileSource : ITileSource
     {

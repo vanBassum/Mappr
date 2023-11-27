@@ -1,7 +1,13 @@
 using EngineLib.Core;
+using EngineLib.Rendering;
+using EngineLib.Statics;
 using Mappr.Meuk;
-using Mappr.Tiles;
+using System.Diagnostics;
+using System.Drawing;
 using System.Numerics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Windows.Forms.Design.Behavior;
 
 namespace Mappr
 {
@@ -32,57 +38,65 @@ namespace Mappr
         {
             Scene scene = new Scene();
 
-            var tileMap = scene.RootObject.AddChild<TileMap>();
-            //tileMap.Transform.Position = new Vector2(100, 0);
-            tileMap.Transform.Scale = Vector2.One * 64f;
+
+            var rect1 = scene.RootObject.AddChild<MyPlayer>();
+            rect1.Transform.Position = new Vector2(100, 100);
+            rect1.Transform.Rotation = 10 * MathF.PI / 180;
 
 
-            for (int i = 0; i < 10; i++)
-            {
-                var coin = scene.RootObject.AddChild<Coin>();
 
-                MoveToRandom moveToRandom = coin.AddComponent<MoveToRandom>();
-                moveToRandom.Max = new Vector2(pictureBox1.Width, pictureBox1.Height);
+            var cam1 = new Camera(pictureBox1);
+            cam1.Transform.Scale = Vector2.One * 1f;
+            scene.RootObject.AddChild(cam1);
 
-                //coin.bobbing.EndPos = new Vector2(Random.Next(pictureBox1.Width), Random.Next(pictureBox1.Height));
-                coin.rotator.speed = (float)(RANDOM.Random.NextDouble() * Math.PI);
-                coin.Transform.Position = new Vector2(RANDOM.Random.Next(pictureBox1.Width), RANDOM.Random.Next(pictureBox1.Height));
-                //coin.Transform.Scale = Vector2.One * 0.5f;
-            }
-
-
-            //scene.RootObject.AddChild(new Coin());
-            var cam = new Camera(pictureBox1);
-            cam.Transform.Scale = Vector2.One * 1f;
-            scene.RootObject.AddChild(cam);
-            //cam.AddComponent<Bobbing2>();
-
+            var cam2 = new Camera(pictureBox2);
+            cam2.Transform.Scale = Vector2.One * 2f;
+            scene.RootObject.AddChild(cam2);
             return scene;
         }
-
-
-
-
     }
 
-
-    public class TileMap : GameObject
+    public class MyPlayer : GameObject
     {
+        MeshCollider collider;
+        MeshRenderer renderer;
+        public MyPlayer()
+        {
+            Mesh mesh = new Mesh();
+            mesh.AddRectangle(new Vector2(-50, -50), new Vector2(50, 0));  //Head
 
-        TileRenderer? renderer;
+            collider = new MeshCollider();
+            renderer = new MeshRenderer();
+
+
+            collider.Meshes.Add(mesh);
+            renderer.Meshes.Add(mesh);
+
+            //     shapes.Add(new ShapeRectangle { PointA = new Vector2(-50, -50), PointB = new Vector2(50, 0) })
+            //
+            // shapes.Add(new ShapeLine { PointA = new Vector2(0, 0), PointB = new Vector2(0, -50) })          //Body
+            //
+            //
+            //
+            // collider = new ShapeCollider();
+            //     collider.Shapes = shapes;
+            //     renderer = new ShapeRenderer();
+            //     renderer.Shapes = shapes;
+        }
+
 
         public override void Awake()
         {
-            renderer = AddComponent<TileRenderer>();
+            AddComponent(collider);
+            AddComponent(renderer);
 
-            FileTileSource fileSource = new FileTileSource("maps/gta5");
-            ScalerTileSource scaler = new ScalerTileSource(fileSource);
-            CachingTileSource cashing = new CachingTileSource(scaler, (1920 * 1080) * 5 / (128 * 128));
 
-            renderer.TileSource = cashing;
 
         }
 
+
     }
-    
+
+
+
 }

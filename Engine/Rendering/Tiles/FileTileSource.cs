@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
 
-namespace Mappr.Tiles
+namespace EngineLib.Rendering.Tiles
 {
     public class FileTileSource : ITileSource
     {
@@ -26,7 +26,7 @@ namespace Mappr.Tiles
                 }
 
                 Bitmap tileBitmap = new Bitmap(filePath);
-                return new Tile(tileBitmap, 1<<zoom);
+                return new Tile(tileBitmap, 1 << zoom);
             }
             catch (Exception ex)
             {
