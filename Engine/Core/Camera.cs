@@ -40,6 +40,12 @@ namespace EngineLib.Core
 
         private void PictureBox_Paint(object? sender, PaintEventArgs e)
         {
+            if (Scene == null)
+                return;
+            RenderEntity(e.Graphics, Scene.RootEntity, new Transform());
+
+
+
             var rendererableObjects = GameEntity.FindObjectsThatHaveComponentOfType<IRenderer>();
 
             foreach (var rendererableObject in rendererableObjects)
@@ -51,6 +57,25 @@ namespace EngineLib.Core
                 }
             }
         }
+
+
+        private void RenderEntity(Graphics g, GameEntity entity, Transform transform)
+        {
+            var renderers = entity.GetComponents<IRenderer>();
+            foreach (var renderer in renderers)
+                renderer.Render(g, this, entity.Transform);
+            
+
+
+
+
+
+        }
+
+
+
+
+
     }
 
 }

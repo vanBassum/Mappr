@@ -42,6 +42,9 @@ namespace Mappr
 
             var man = scene.RootEntity.AddChild<Manager>();
 
+            scene.RootEntity.AddChild<Component>().Transform.Position = new Vector2(150, 50);
+            scene.RootEntity.AddChild<Component>().Transform.Position = new Vector2(25, 50);
+
             var cam1 = new Camera(pictureBox1);
             cam1.Transform.Scale = Vector2.One * 1f;
             scene.RootEntity.AddChild(cam1);
@@ -62,7 +65,6 @@ namespace Mappr
         Dot dot;
         public override void Start()
         {
-            AddPlayer(this, new Vector2(100, 100));
             dot = AddChild<Dot>();
         }
 
@@ -72,7 +74,7 @@ namespace Mappr
             if (entities != null && Input.Mouse.IsValid)
             {
                 bool found = false;
-                foreach (var entity in entities)
+                foreach (var entity in entities.Reverse())
                 {
                     var collider = entity.GetComponent<ICollider>();
                     var renderer = entity.GetComponent<MeshRenderer>();
@@ -94,22 +96,66 @@ namespace Mappr
                     Input.Mouse.Camera.Transform.Scale /= 2;
             }
 
-            if(Input.Mouse.IsValid)
+            if (Input.Mouse.IsValid)
             {
                 dot.Transform.Position = Input.Mouse.Position;
             }
         }
+    }
 
 
-        void AddPlayer(GameEntity entity, Vector2 pos)
+
+
+
+    public class Component : GameEntity
+    {
+        //private readonly List<Port> ports = new List<Port>();
+        MeshRenderer renderer;
+
+        public override void Awake()
         {
-            var rect1 = entity.AddChild<MyPlayer>();
+            Mesh mesh = new Mesh();
+            mesh.AddRectangle(new Vector2(-50, -50), new Vector2(100, 100));
+            renderer = AddComponent<MeshRenderer>();
+            renderer.Meshes.Add(mesh);
 
-            rect1.Transform.Position = pos;
-            rect1.AddComponent<Bobbing>();
-            rect1.AddComponent<Rotator>();
+            AddChild<Port>().Transform.Position = new Vector2(45, 15);
+            AddChild<Port>().Transform.Position = new Vector2(45, 0);
+            AddChild<Port>().Transform.Position = new Vector2(45, -15);
+        }
+
+
+    }
+
+    public class Port : GameEntity 
+    {
+        MeshRenderer renderer;
+        public override void Awake()
+        {
+            Mesh mesh = new Mesh();
+            mesh.AddRectangle(new Vector2(-5, -5), new Vector2(10, 10));
+            renderer = AddComponent<MeshRenderer>();
+            renderer.Meshes.Add(mesh);
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     public class Dot : GameEntity
     {
@@ -130,44 +176,4 @@ namespace Mappr
         }
     }
 
-
-    public class MyPlayer : GameEntity
-    {
-        MeshCollider collider;
-        MeshRenderer renderer;
-        public MyPlayer()
-        {
-            Mesh mesh1 = new Mesh();
-            mesh1.AddRectangle(new Vector2(-25, -25), new Vector2(50, 50));  //Head
-
-            Mesh mesh2 = new Mesh();
-            mesh2.AddLine(new Vector2(0, 25), new Vector2(0, 100));
-
-
-            collider = new MeshCollider();
-            renderer = new MeshRenderer();
-
-
-            collider.Meshes.AddRange(new Mesh[] { mesh1, mesh2 });
-            renderer.Meshes.AddRange(new Mesh[] { mesh1, mesh2 });
-
-        }
-
-
-        public override void Awake()
-        {
-            AddComponent(collider);
-            AddComponent(renderer);
-        }
-
-
-        public override void Update()
-        {
-
-            //bool collide = collider.Collides(Input.Mouse.WorldPosition, Transform);
-
-            //renderer.Pen = collide? Pens.Red : Pens.Black;
-
-        }
-    }
 }
