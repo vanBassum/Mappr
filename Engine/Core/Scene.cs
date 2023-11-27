@@ -5,20 +5,20 @@ namespace EngineLib.Core
     public class Scene
     {
         public Queue<IStartable> Startables { get; } = new Queue<IStartable> { };
-        public GameObject RootObject { get; }
+        public GameEntity RootEntity { get; }
 
         public Scene() { 
-            RootObject = new GameObject(this);
+            RootEntity = new GameEntity(this);
         }  
 
-        public IEnumerable<GameObject> GetGameObjects()
+        public IEnumerable<GameEntity> GetGameEntities()
         {
-            Queue<GameObject> queue = new Queue<GameObject>();
-            queue.Enqueue(RootObject);
+            Queue<GameEntity> queue = new Queue<GameEntity>();
+            queue.Enqueue(RootEntity);
 
             while (queue.Count > 0)
             {
-                GameObject obj = queue.Dequeue();
+                GameEntity obj = queue.Dequeue();
                 yield return obj;
 
                 foreach (var child in obj.Children)

@@ -23,7 +23,7 @@ namespace EngineLib.Core
         {
             task?.Stop();
             this.scene = scene;
-            GameObject.RootObject = scene.RootObject;
+            GameEntity.RootEntity = scene.RootEntity;
             task = new TickTask(Loop);
             task.TickInterval = TimeSpan.FromSeconds(1f / 30f);
         }
@@ -32,7 +32,7 @@ namespace EngineLib.Core
         MouseState GetInput()
         {
             MouseState state = MouseState.Invalid;
-            var cameras = scene?.GetGameObjects().Where(a => a is Camera);
+            var cameras = scene?.GetGameEntities().Where(a => a is Camera);
             if (cameras == null)
                 return state;
             foreach (var camera in cameras)
@@ -56,22 +56,22 @@ namespace EngineLib.Core
             Time.TimeSinceStart = timeInfo.TimeSinceStart;
             Input.Mouse = GetInput();
 
-            if (scene?.RootObject == null)
+            if (scene?.RootEntity == null)
                 return;
-            Update(scene.RootObject);
+            Update(scene.RootEntity);
             stopwatch.Stop();
             onFrame?.Invoke(this, stopwatch.Elapsed);
         }
 
 
-        void Update(GameObject go)
+        void Update(GameEntity go)
         {
             while(scene?.Startables?.TryDequeue(out var startable)??false)
                 startable.Start();
 
             go.Update();
 
-            var monos = go.GetComponent<GameScript>();
+            var monos = go.GetComponents<GameScript>();
             foreach(var mono in monos)
                 mono.Update();
 

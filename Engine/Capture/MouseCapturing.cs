@@ -9,6 +9,7 @@ namespace EngineLib.Capture
         private readonly object syncLock = new object();
         private MouseButtons buttons;
         private Vector2 position;
+        private float wheelDelta = 0;
 
         public MouseCapturing(PictureBox pictureBox)
         {
@@ -19,6 +20,15 @@ namespace EngineLib.Capture
             pictureBox.MouseDown += PictureBox_MouseDown;
             pictureBox.MouseUp += PictureBox_MouseUp;
             pictureBox.MouseMove += PictureBox_MouseMove;
+            pictureBox.MouseWheel += PictureBox_MouseWheel;
+        }
+
+        private void PictureBox_MouseWheel(object? sender, MouseEventArgs e)
+        {
+            lock(syncLock)
+            {
+                wheelDelta += e.Delta;
+            }
         }
 
         private void PictureBox_MouseDown(object? sender, MouseEventArgs e)
@@ -54,12 +64,15 @@ namespace EngineLib.Capture
                 Point mousePosition = pictureBox.PointToClient(Control.MousePosition);
                 bool isWithinBounds = pictureBox.ClientRectangle.Contains(mousePosition);
 
-                return new MouseState
+                var result = new MouseState
                 {
                     Buttons = buttons,
-                    WorldPosition = position,
+                    WheelDelta = wheelDelta,
+                    Position = position,
                     IsValid = isWithinBounds
                 };
+                wheelDelta = 0;
+                return result;
             }
         }
     }

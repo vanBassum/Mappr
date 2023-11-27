@@ -6,36 +6,22 @@ namespace Mappr.Meuk
 {
     public class Bobbing : GameScript
     {
-        float speed = 25f;      //px per second
+        float speed = 1f;      
+        float height = 25f;
         Vector2 startPos;
-        public Vector2 EndPos { get; set; }
-
-        Vector2 moveTo;
+        float tStart = 0;
 
         public override void Start()
         {
             startPos = GameObject.Transform.Position;
-            moveTo = EndPos;
+            tStart = Time.TimeSinceStart;
         }
 
         public override void Update()
         {
-            var distance = speed * Time.DeltaTime;
-            var step = moveTo - GameObject.Transform.Position;
-
-            if (step.Length() < distance)
-            {
-                if (moveTo == EndPos)
-                    moveTo = startPos;
-                else
-                    moveTo = EndPos;
-            }
-            else
-            {
-                step = Vector2.Normalize(step) * distance;
-            }
-
-            GameObject.Transform.Position += step;
+            float add = MathF.Sin((Time.TimeSinceStart - tStart) * MathF.PI * speed) * height;
+            
+            GameObject.Transform.Position = startPos + Vector2.UnitY * add;
         }
     }
 

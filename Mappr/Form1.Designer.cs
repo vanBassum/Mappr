@@ -39,16 +39,16 @@
             pictureBox1.BorderStyle = BorderStyle.FixedSingle;
             pictureBox1.Location = new Point(12, 12);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(682, 710);
+            pictureBox1.Size = new Size(500, 500);
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             // 
             // pictureBox2
             // 
             pictureBox2.BorderStyle = BorderStyle.FixedSingle;
-            pictureBox2.Location = new Point(700, 12);
+            pictureBox2.Location = new Point(518, 12);
             pictureBox2.Name = "pictureBox2";
-            pictureBox2.Size = new Size(426, 299);
+            pictureBox2.Size = new Size(500, 500);
             pictureBox2.TabIndex = 1;
             pictureBox2.TabStop = false;
             // 

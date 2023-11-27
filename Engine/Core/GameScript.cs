@@ -5,7 +5,7 @@
 
     public class GameScript : IComponent, IStartable, IUpdateable, IAwakable
     {
-        public GameObject GameObject { get; set; }
+        public GameEntity GameObject { get; set; }
         public GameScript()
         {
         }

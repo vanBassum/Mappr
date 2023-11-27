@@ -4,7 +4,7 @@ using System.Numerics;
 
 namespace Mappr.Meuk
 {
-    public class Coin : GameObject
+    public class Coin : GameEntity
     {
         //LinesRenderer? renderer;
         public Rotator? rotator;

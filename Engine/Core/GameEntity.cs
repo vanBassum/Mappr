@@ -6,34 +6,34 @@ using System.Xml.Serialization;
 namespace EngineLib.Core
 {
 
-    public class GameObject : IStartable, IUpdateable, IAwakable
+    public class GameEntity : IStartable, IUpdateable, IAwakable
     {
         private List<IComponent> components = new List<IComponent>();
-        private List<GameObject> children = new List<GameObject>();
+        private List<GameEntity> children = new List<GameEntity>();
 
         public Transform Transform { get; private set; }
-        public GameObject? Parent { get; private set; }
+        public GameEntity? Parent { get; private set; }
         public Scene? Scene { get; private set; }
-        public IEnumerable<GameObject> Children => children;
+        public IEnumerable<GameEntity> Children => children;
 
 
-        public GameObject()
+        public GameEntity()
         {
             Transform = new Transform();
         }
 
-        public GameObject(Scene scene)
+        public GameEntity(Scene scene)
         {
             Transform = new Transform();
             Scene = scene;
         }
 
-        public T AddChild<T>() where T : GameObject, new()
+        public T AddChild<T>() where T : GameEntity, new()
         {
             return AddChild(new T());
         }
 
-        public T AddChild<T>(T child) where T : GameObject
+        public T AddChild<T>(T child) where T : GameEntity
         {
 
             if (child == null)
@@ -47,6 +47,7 @@ namespace EngineLib.Core
             }
 
             child.Parent = this;
+            child.Scene = Scene;
             children.Add(child);
             child.Awake();
             PassNew(child);
@@ -80,10 +81,15 @@ namespace EngineLib.Core
             Scene?.PassNew(startable);
         }
 
-        public static GameObject? RootObject { private get; set; }
+        public static GameEntity? RootEntity { private get; set; }
 
 
-        public IEnumerable<T> GetComponent<T>() where T : IComponent
+        public T? GetComponent<T>() where T : IComponent
+        {
+            return GetComponents<T>().FirstOrDefault();
+        }
+
+        public IEnumerable<T> GetComponents<T>() where T : IComponent
         {
             foreach (var component in components.OfType<T>())
             {
@@ -91,19 +97,19 @@ namespace EngineLib.Core
             }
         }
 
-        public static IEnumerable<GameObject> FindObjectsThatHaveComponentOfType<T>() where T : IComponent
+        public static IEnumerable<GameEntity> FindObjectsThatHaveComponentOfType<T>() where T : IComponent
         {
-            if (RootObject == null)
+            if (RootEntity == null)
             {
                 yield break;
             }
 
-            Queue<GameObject> queue = new Queue<GameObject>();
-            queue.Enqueue(RootObject);
+            Queue<GameEntity> queue = new Queue<GameEntity>();
+            queue.Enqueue(RootEntity);
 
             while (queue.Count > 0)
             {
-                GameObject obj = queue.Dequeue();
+                GameEntity obj = queue.Dequeue();
 
                 // Check if the object has the desired component type
                 if (obj.components.Any(c => c is T))

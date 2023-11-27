@@ -13,5 +13,8 @@ namespace EngineLib.Extentions
         public static Size ToSize(this Vector2 point) => new Size((int)point.X, (int)point.Y);
         public static SizeF ToSizeF(this Vector2 point) => new SizeF(point.X, point.Y);
 
+
+        public static IEnumerable<Point> ToPoints(this IEnumerable<Vector2> points) => points.Select(p => p.ToPoint());
+
     }
 }
