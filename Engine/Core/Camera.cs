@@ -1,81 +1,93 @@
 ﻿using EngineLib.Capture;
 using EngineLib.Rendering;
+using System.Linq;
 using System.Numerics;
 
 namespace EngineLib.Core
 {
-    public class Camera : GameEntity
+    public class Camera : IComponent
     {
+        public GameEntity Entity { get; set; } = GameEntity.Empty;
+
         private readonly PictureBox pictureBox;
-        private readonly MouseCapturing mouseCapturing;
-        public Vector2 ViewPort { get; private set; }
         public Camera(PictureBox pictureBox)
         {
             this.pictureBox = pictureBox;
-            this.mouseCapturing = new MouseCapturing(pictureBox);
             pictureBox.Paint += PictureBox_Paint;
-            ViewPort = new Vector2(pictureBox.Width, pictureBox.Height);
-            pictureBox.Resize += (s,e) => ViewPort = new Vector2(pictureBox.Width, pictureBox.Height);
         }
 
-        public override void Update() 
+        public void Update()
         {
             pictureBox.Refresh();
-            base.Update();
         }
 
-        public MouseState GetMouseState()
+        private Matrix3x2 GetPerspective(out GameEntity rootEntity)
         {
-            var screenState = mouseCapturing.GetMouseState();
-            return new MouseState 
-            { 
-                Buttons = screenState.Buttons, 
-                WheelDelta = screenState.WheelDelta,
-                Position = Transform.TransformPoint(screenState.Position - ViewPort / 2), 
-                IsValid = screenState.IsValid,
-                Camera = this,
-            };
+            GameEntity? entity = Entity;
+            rootEntity = Entity;
+            Matrix3x2 result = Matrix3x2.Identity;
+
+
+            while (entity != null)
+            {
+                var trans = entity.Transform.GetTransformationMatrix();
+                if (Matrix3x2.Invert(trans, out var inv))
+                    result *= inv;
+
+                rootEntity = entity;  // Update the rootEntity during traversal
+                entity = entity.Parent;
+            }
+
+            return result;
         }
 
+        private Matrix3x2 GetPictureBoxOffset()
+        {
+            // Calculate the offset to center the camera view
+            SizeF pictureBoxSize = pictureBox.ClientSize;
+            SizeF cameraViewSize = new SizeF(pictureBoxSize.Width / 2, pictureBoxSize.Height / 2);
+            Vector2 offset = new Vector2(cameraViewSize.Width, cameraViewSize.Height);
+            return Matrix3x2.CreateTranslation(offset);
+        }
 
         private void PictureBox_Paint(object? sender, PaintEventArgs e)
         {
-            if (Scene == null)
-                return;
-            RenderEntity(e.Graphics, Scene.RootEntity, new Transform());
-
-
-
-            var rendererableObjects = GameEntity.FindObjectsThatHaveComponentOfType<IRenderer>();
-
-            foreach (var rendererableObject in rendererableObjects)
-            {
-                var renderers = rendererableObject.GetComponents<IRenderer>();
-                foreach (var renderer in renderers)
-                {
-                    renderer.Render(e.Graphics, this, rendererableObject.Transform);
-                }
-            }
+            GameEntity rootEntity;
+            Matrix3x2 perspective = GetPerspective(out rootEntity);
+            Viewport viewport = CalculateViewport(perspective);
+            Render(e.Graphics, perspective, rootEntity, viewport);
         }
 
-
-        private void RenderEntity(Graphics g, GameEntity entity, Transform transform)
+        void Render(Graphics graphics, Matrix3x2 transform, GameEntity entity, Viewport viewport)
         {
+            transform *= entity.Transform.GetTransformationMatrix();
+
+            
             var renderers = entity.GetComponents<IRenderer>();
             foreach (var renderer in renderers)
-                renderer.Render(g, this, entity.Transform);
-            
+                renderer.Render(graphics, transform * GetPictureBoxOffset(), viewport);
 
-
-
-
-
+            foreach (var child in entity.GetChildren())
+                Render(graphics, transform, child, viewport);
         }
 
+        private Viewport CalculateViewport(Matrix3x2 perspective)
+        {
+            SizeF pictureBoxSize = pictureBox.ClientSize;
 
+            // Get the position of the camera in world coordinates
+            Vector2 cameraPosition = Vector2.Transform(Vector2.Zero, perspective);
 
+            // Calculate the half-width and half-height of the camera's view
+            float halfWidth = pictureBoxSize.Width / 2;
+            float halfHeight = pictureBoxSize.Height / 2;
 
+            // Calculate the top-left and bottom-right corners of the viewport
+            Vector2 topLeft = cameraPosition - new Vector2(halfWidth, halfHeight);
+            Vector2 bottomRight = cameraPosition + new Vector2(halfWidth, halfHeight);
 
+            return new Viewport(topLeft, bottomRight);
+        }
     }
 
 }

@@ -1,52 +1,40 @@
 ﻿using EngineLib.Utils;
 using EngineLib.Statics;
 using EngineLib.Capture;
-using EngineLib.Rendering;
-using System.Xml.Serialization;
 using System.Diagnostics;
-using static System.Windows.Forms.AxHost;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace EngineLib.Core
 {
     public class Engine
     {
-        public event EventHandler<TimeSpan> onFrame;
-        private TickTask? task;
-        private Scene? scene;
-        public Engine()
+        public event EventHandler<TimeSpan>? onFrame;
+        private readonly TickTask task;
+        private readonly GameEntity rootEntity;
+        public Engine(GameEntity rootEntity)
         {
-
+            this.rootEntity = rootEntity;
+            this.task = new TickTask(Loop);
+            this.task.TickInterval = TimeSpan.FromSeconds(1f / 30f);
         }
 
-        public void Load(Scene scene)
-        {
-            task?.Stop();
-            this.scene = scene;
-            GameEntity.RootEntity = scene.RootEntity;
-            task = new TickTask(Loop);
-            task.TickInterval = TimeSpan.FromSeconds(1f / 30f);
-        }
-
-
-        MouseState GetInput()
-        {
-            MouseState state = MouseState.Invalid;
-            var cameras = scene?.GetGameEntities().Where(a => a is Camera);
-            if (cameras == null)
-                return state;
-            foreach (var camera in cameras)
-            {
-                if(camera is Camera cam)
-                {
-                    state = cam.GetMouseState();
-                    if(state.IsValid)
-                        return state;
-                }
-            }
-
-            return state;
-        }
+        //MouseState GetInput()
+        //{
+        //    MouseState state = MouseState.Invalid;
+        //    var cameras = scene?.GetGameEntities().Where(a => a is Camera);
+        //    if (cameras == null)
+        //        return state;
+        //    foreach (var camera in cameras)
+        //    {
+        //        if(camera is Camera cam)
+        //        {
+        //            state = cam.GetMouseState();
+        //            if(state.IsValid)
+        //                return state;
+        //        }
+        //    }
+        //
+        //    return state;
+        //}
 
 
         void Loop(TimeInfo timeInfo)
@@ -54,11 +42,13 @@ namespace EngineLib.Core
             Stopwatch stopwatch = Stopwatch.StartNew();
             Time.DeltaTime = timeInfo.DeltaTime;
             Time.TimeSinceStart = timeInfo.TimeSinceStart;
-            Input.Mouse = GetInput();
+            //Input.Mouse = GetInput();
 
-            if (scene?.RootEntity == null)
-                return;
-            Update(scene.RootEntity);
+            //if (scene?.RootEntity == null)
+            //    return;
+            //Update(scene.RootEntity);
+
+            Update(rootEntity);
             stopwatch.Stop();
             onFrame?.Invoke(this, stopwatch.Elapsed);
         }
@@ -66,16 +56,10 @@ namespace EngineLib.Core
 
         void Update(GameEntity go)
         {
-            while(scene?.Startables?.TryDequeue(out var startable)??false)
-                startable.Start();
+            foreach(var component in go.GetComponents())
+                component.Update();
 
-            go.Update();
-
-            var monos = go.GetComponents<GameScript>();
-            foreach(var mono in monos)
-                mono.Update();
-
-            foreach (var child in go.Children)
+            foreach (var child in go.GetChildren())
                 Update(child);
         }
     }

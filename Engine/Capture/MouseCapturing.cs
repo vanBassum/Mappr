@@ -36,7 +36,7 @@ namespace EngineLib.Capture
             lock (syncLock)
             {
                 buttons |= e.Button;
-                position = e.Location.ToVector();
+                position = e.Location.ToVector2();
             }
         }
 
@@ -45,7 +45,7 @@ namespace EngineLib.Capture
             lock (syncLock)
             {
                 buttons &= ~e.Button;
-                position = e.Location.ToVector();
+                position = e.Location.ToVector2();
             }
         }
 
@@ -53,7 +53,7 @@ namespace EngineLib.Capture
         {
             lock (syncLock)
             {
-                position = e.Location.ToVector();
+                position = e.Location.ToVector2();
             }
         }
 

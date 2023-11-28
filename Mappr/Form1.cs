@@ -20,8 +20,8 @@ namespace Mappr
         {
             InitializeComponent();
 
-            engine = new Engine();
-            engine.Load(CreateScene());
+            GameEntity root = CreateScene();
+            engine = new Engine(root);
             engine.onFrame += Engine_onFrame;
         }
 
@@ -29,37 +29,35 @@ namespace Mappr
         {
             this.InvokeIfRequired(() =>
             {
-
                 this.Text = avg.Add((float)e.TotalMilliseconds).ToString();
             });
         }
 
-        Scene CreateScene()
+        GameEntity CreateScene()
         {
-            Scene scene = new Scene();
+            GameEntity root = new GameEntity();
 
-            //rect1.Transform.Rotation = 10 * MathF.PI / 180;
+            var square1 = root.AddChild(new GameEntity());
+            square1.AddComponent(new MeshRenderer());
+            square1.AddComponent(Mesh.Rectangle(1, 1));
+            square1.Transform.Scale = Vector2.One * 20f;
 
-            var man = scene.RootEntity.AddChild<Manager>();
+            var camObject1 = root.AddChild(new GameEntity());
+            camObject1.AddComponent(new Camera(pictureBox1));
 
-            scene.RootEntity.AddChild<Component>().Transform.Position = new Vector2(150, 50);
-            scene.RootEntity.AddChild<Component>().Transform.Position = new Vector2(25, 50);
+           // var camObject2 = root.AddChild(new GameEntity());
+           // camObject2.AddComponent(new Camera(pictureBox2));
 
-            var cam1 = new Camera(pictureBox1);
-            cam1.Transform.Scale = Vector2.One * 1f;
-            scene.RootEntity.AddChild(cam1);
-
-            var cam2 = new Camera(pictureBox2);
-            //cam2.Transform.Position = new Vector2(-100, -100);
-            //cam2.Transform.Rotation = MathF.PI * 45 / 180;
-            cam2.Transform.Scale = Vector2.One * 10f;
-            scene.RootEntity.AddChild(cam2);
-            return scene;
+            return root;
         }
-
     }
 
 
+
+
+
+
+    /*
     public class Manager : GameEntity
     {
         Dot dot;
@@ -175,5 +173,5 @@ namespace Mappr
             AddComponent(renderer);
         }
     }
-
+    */
 }
