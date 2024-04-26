@@ -49,25 +49,6 @@ namespace Mappr.Controls
             return new CoordinateScaler2D(scale, offset);
         }
 
-
-        public static Vector2[] Error(Vector2[] world, Vector2[] map, CoordinateScaler2D scaler)
-        {
-            if (world.Length != map.Length)
-                throw new ArgumentException("Input arrays must have the same length.");
-
-            Vector2[] errors = new Vector2[world.Length];
-
-            for (int i = 0; i < world.Length; i++)
-            {
-                Vector2 transformedWorldCoordinate = scaler.ApplyTransformation(world[i]);
-                Vector2 error = transformedWorldCoordinate - map[i];
-                errors[i] = error;
-            }
-
-            return errors;
-        }
-
-
         public static (float slope, float intercept) Fit(float[] xValues, float[] yValues)
         {
             float slope;

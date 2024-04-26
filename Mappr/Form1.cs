@@ -5,6 +5,7 @@ using Mappr.Extentions;
 using Mappr.Kernel;
 using Mappr.MapInteractions;
 using Mappr.Tiles;
+using System;
 using System.Numerics;
 using System.Threading.Tasks.Dataflow;
 
@@ -84,50 +85,18 @@ namespace Mappr
 
 
 
-            //worldPoints.AddRange(new Vector2[] {
-            //    new Vector2(3259.0862f, 5148.1704f),
-            //     new Vector2(-1660.7303f, -1029.1011f),
-            //});
-            //
-            //mapPoints.AddRange(new Vector2[] {
-            //    new Vector2(105.21094f, 46.25f),
-            //     new Vector2(35.265625f, 134.11719f),
-            //});
-
             worldPoints.AddRange(new Vector2[] {
-                new Vector2(0, 0),
-                 new Vector2(1, 1),
-                 new Vector2(10, 10)
+                new Vector2(3259.0862f, 5148.1704f),
+                 new Vector2(-1660.7303f, -1029.1011f),
             });
-
+            
             mapPoints.AddRange(new Vector2[] {
-                new Vector2(0, 0),
-                 new Vector2(1.5f, 1),
-                 new Vector2(10, 10),
-
+                new Vector2(105.21094f, 46.25f),
+                 new Vector2(35.265625f, 134.11719f),
             });
 
-            // Define the world and map coordinates
-            Vector2[] world = new Vector2[]
-            {
-                new Vector2(1, 1),
-                new Vector2(2, 2),
-                new Vector2(3, 3),
-                new Vector2(4, 4),
-                new Vector2(5, 5)
-            };
 
-            Vector2[] map = new Vector2[]
-            {
-                new Vector2(2, 2),
-                new Vector2(4, 4),
-                new Vector2(7, 6),
-                new Vector2(8, 8),
-                new Vector2(10, 10)
-            };
-
-            scaler2 = CoordinateRegression.Fit(world, map);
-            var errors = CoordinateRegression.Error(world, map, scaler2);
+            scaler2 = CoordinateRegression.Fit(worldPoints.ToArray(), mapPoints.ToArray());
 
             Start();
         }
@@ -141,11 +110,92 @@ namespace Mappr
                 {
                     if (!memoryManager.IsAttached())
                     {
-                        if (!memoryManager.attach("GTA5"))
+                        if (!memoryManager.attach("EscapeFromTarkov"))
                             return;
                     }
 
-                    IntPtr xAddr = memoryManager.GetProcessBase() + 0x1D9F800;
+                    nint unityBase                  = memoryManager.GetProcessModuleBase("UnityPlayer.dll");
+                    nint gameObjectManager          = memoryManager.Read_Address( unityBase + 0x17FFD28);
+
+
+                    nint LastTaggedNode             = memoryManager.Read_Address( gameObjectManager + 0x0  );
+                    nint TaggedNodes                = memoryManager.Read_Address( gameObjectManager + 0x8  );
+                    nint LastMainCameraTaggedNode   = memoryManager.Read_Address( gameObjectManager + 0x10 );
+                    nint MainCameraTaggedNodes      = memoryManager.Read_Address( gameObjectManager + 0x18 );
+                    nint LastActiveNode             = memoryManager.Read_Address( gameObjectManager + 0x20 );
+                    nint ActiveNodes                = memoryManager.Read_Address( gameObjectManager + 0x28 );
+
+                    nint activeNodes                = memoryManager.Read_Address(ActiveNodes);
+                    nint lastActiveNode             = memoryManager.Read_Address(LastActiveNode);
+
+                    nint cObject = activeNodes;
+                    nint gameWorld = 0;
+                    //TODO: doesnt include last item!
+                    while (cObject != lastActiveNode)
+                    {
+                        nint obj = memoryManager.Read_Address(cObject + 0x10);
+                        nint nameptr = memoryManager.Read_Address(obj + 0x60);
+                        string name = memoryManager.Read_String(nameptr, 128);
+
+                        if(name == "GameWorld")
+                        {
+                            gameWorld = obj;
+                            break;
+                        }
+                        cObject = memoryManager.Read_Address(cObject + 0x8);
+                    }
+
+                    if (gameWorld == 0)
+                        return;
+
+                    nint c1 = memoryManager.Read_Address(gameWorld + 0x30);
+                    nint c2 = memoryManager.Read_Address(c1 + 0x18);
+                    nint c3 = memoryManager.Read_Address(c2 + 0x28);
+                    nint mainPlayer = memoryManager.Read_Address(c3 + 0x118);
+
+
+                    nint weaponPort = memoryManager.Read_Address(mainPlayer + 0x1A0);
+                    nint hands = memoryManager.Read_Address(weaponPort + 0x18);
+                    nint fireport = memoryManager.Read_Address(hands + 0x88);
+                    nint test1 = memoryManager.Read_Address(fireport + 0x10);
+
+
+                    nint body = memoryManager.Read_Address(mainPlayer + 0xA8);
+                    nint playerbones = memoryManager.Read_Address(body + 0x20);
+                    nint root = memoryManager.Read_Address(playerbones + 0x80);
+                    nint test2 = memoryManager.Read_Address(root + 0x10);
+
+
+
+
+
+                    nint skele = memoryManager.Read_Address(body + 0x28);
+                    nint _values = memoryManager.Read_Address(skele +0x28);
+                    nint pbase = memoryManager.Read_Address(_values + 0x10);
+                    nint cnt = memoryManager.Read_Address(_values + 0x18);
+
+                    int boneIndex = 0;
+                    nint start = memoryManager.Read_Address(pbase + 0x20 + boneIndex * 0x8);
+                    nint test3 = memoryManager.Read_Address(start + 0x10);
+
+
+
+
+
+                    //IntPtr gameWorld = FindObject(activeNodes, lastActiveNode, "GameWorld");
+                    //
+                    //
+                    //
+                    //
+                    //_localGameWorld = Memory.ReadPtrChain(gameWorld, { 0x30, 0x18, 0x28});
+
+
+                    return;
+
+
+
+
+                        IntPtr xAddr = memoryManager.GetProcessBase() + 0x1D9F800;
                     IntPtr yAddr = memoryManager.GetProcessBase() + 0x1D9F804;
 
                     playerWorldPos = new Vector2(
@@ -163,50 +213,6 @@ namespace Mappr
                     });
                 }
             });
-        }
-    }
-
-    public class ErrorsEntity : IDrawable
-    {
-        public Vector2[] World { get; set; }
-        public Vector2[] Map { get; set; }
-        public Vector2[] Errors { get; set; }
-
-
-        virtual public void Draw(Graphics g, CoordinateScaler2D scaler, Vector2 screenSize)
-        {
-            var screenPos = scaler.ApplyTransformation(MapPosition);
-            bool isObjectOnScreen = screenPos.X >= 0 && screenPos.Y >= 0 && screenPos.X < screenSize.X && screenPos.Y < screenSize.Y;
-            if (isObjectOnScreen)
-            {
-                if (MouseHover)
-                    DrawCross(g, Pens.Blue, screenPos);
-                else
-                    DrawCross(g, Pens.Red, screenPos);
-            }
-
-        }
-
-        void DrawCross(Graphics g, Pen pen, Vector2 screenPos, int crossSize = 10)
-        {
-            // Calculate the starting and ending points for the cross lines
-            Point startPointHorizontal = new Point((int)screenPos.X - crossSize, (int)screenPos.Y);
-            Point endPointHorizontal = new Point((int)screenPos.X + crossSize, (int)screenPos.Y);
-            Point startPointVertical = new Point((int)screenPos.X, (int)screenPos.Y - crossSize);
-            Point endPointVertical = new Point((int)screenPos.X, (int)screenPos.Y + crossSize);
-
-            // Draw the horizontal and vertical lines to create the cross
-            g.DrawLine(pen, startPointHorizontal, endPointHorizontal);
-            g.DrawLine(pen, startPointVertical, endPointVertical);
-        }
-
-
-        public bool IsMouseWithinEntityBounds(MapMouseEventArgs e)
-        {
-            float radius = 5f;
-            var eScreen = e.Scaler.ApplyTransformation(MapPosition);
-            return e.MouseScreenPosition.X >= eScreen.X - radius && e.MouseScreenPosition.X <= eScreen.X + radius
-                && e.MouseScreenPosition.Y >= eScreen.Y - radius && e.MouseScreenPosition.Y <= eScreen.Y + radius;
         }
     }
 

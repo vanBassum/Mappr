@@ -64,17 +64,17 @@ namespace Mappr.Kernel
 
         #endregion
 
-        public IntPtr GetProcessBase()
+        public nint GetProcessBase()
         {
-            return process.MainModule.BaseAddress;
+            return process?.MainModule?.BaseAddress ?? nint.Zero;
         }
 
-        public IntPtr GetProcessModuleBase(string moduleName)
+        public nint GetProcessModuleBase(string moduleName)
         {
-            var mod = process.Modules.Cast<ProcessModule>().Where(p => p.ModuleName == moduleName).FirstOrDefault();
+            var mod = process?.Modules.Cast<ProcessModule>().Where(p => p.ModuleName == moduleName).FirstOrDefault();
             if (mod != null)
                 return mod.BaseAddress;
-            return IntPtr.Zero;
+            return nint.Zero;
         }
 
 
@@ -122,11 +122,18 @@ namespace Mappr.Kernel
 
         public string Read_String(IntPtr address, int strLength)
         {
-
             byte[] buffer = Read_Bytes(address, strLength);
-            char[] chars = new char[strLength / sizeof(char)];
-            Buffer.BlockCopy(buffer, 0, chars, 0, buffer.Length);
-            return new string(chars);
+            // Convert the byte array to ASCII string
+            string str = Encoding.ASCII.GetString(buffer);
+            // Find the index of the null character ('\0')
+            int nullCharIndex = str.IndexOf('\0');
+            if (nullCharIndex >= 0)
+            {
+                // If null character found, return substring up to that point
+                return str.Substring(0, nullCharIndex);
+            }
+            // If null character not found, return the full string
+            return str;
         }
 
         public byte Read_Byte(IntPtr address)
