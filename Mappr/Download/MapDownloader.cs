@@ -5,31 +5,48 @@ namespace Mappr.Download
     public class MapDownloader
     {
         FileDownloader downloader = new FileDownloader();
-        string GetUri(int z, int x, int y)
-        {
-            return $"https://s.rsg.sc/sc/images/games/GTAV/map/render/{z}/{x}/{y}.jpg";
-        }
 
-        string GetFilePath(int z, int x, int y)
-        {
-            return $"maps/gta5/{z}/{x}x{y}.jpg";
-        }
+        // Define delegate types for the callbacks
+        public delegate string UriCallback(int z, int x, int y);
+        public delegate string FileCallback(int z, int x, int y);
 
-        public async Task Download(int z = 0, int y = 0)
+        // Callback properties
+        public UriCallback? GetUriCallback { get; set; }
+        public FileCallback? GetFileCallback { get; set; }
+
+        public async Task Download(int levels, CancellationToken cancellationToken = default, IProgress<float> progress = null)
         {
-            for (; z < 8; z++)
+            int totalTiles = 0;
+            for (int z = 0; z < levels; z++)
+                totalTiles += (1 << z) * (1 << z);
+
+            int downloadedTiles = 0;
+            for (int z = 0; z < levels; z++)
             {
                 int max = 1 << z;
-                for (; y < max; y++)
+                for (int y = 0; y < max; y++)
                 {
                     for (int x = 0; x < max; x++)
                     {
-                        var uri = GetUri(z, x, y);
-                        var file = GetFilePath(z, x, y);
+                        if (cancellationToken.IsCancellationRequested)
+                            return;
+
+                        if (GetUriCallback == null || GetFileCallback == null)
+                            throw new InvalidOperationException("Callback functions not set.");
+
+                        var uri = GetUriCallback(z, x, y);
+                        var file = GetFileCallback(z, x, y);
+
+                        downloadedTiles++;
                         if (File.Exists(file))
+                        {
+                            progress?.Report((float)downloadedTiles / totalTiles);
                             continue;
+                        }
+                            
                         Debug.WriteLine($"Downloading {uri}");
                         await downloader.DownloadFileAsync(uri, file);
+                        progress?.Report((float)downloadedTiles / totalTiles);
                     }
                 }
             }
