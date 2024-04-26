@@ -16,24 +16,34 @@ namespace Mappr.Tiles
         {
             int zoom = (int)Math.Round(Math.Log(scale, 2));
 
-            try
-            {
-                string filePath = Path.Combine(_basePath, $"{zoom}\\{x}x{y}.jpg");
-                if (!File.Exists(filePath))
-                {
-                    //Debug.WriteLine($"Tile not found: {filePath}");
-                    return null;
-                }
+            // List of supported image file extensions
+            string[] supportedExtensions = new[] { ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff" };
 
-                Bitmap tileBitmap = new Bitmap(filePath);
-                return new Tile(tileBitmap, 1<<zoom);
-            }
-            catch (Exception ex)
+            foreach (var extension in supportedExtensions)
             {
-                Debug.WriteLine($"Error loading tile: {ex.Message}");
-                return null;
+                string filePath = Path.Combine(_basePath, $"{zoom}\\{x}x{y}{extension}");
+
+                // Check if the file exists with the current extension
+                if (File.Exists(filePath))
+                {
+                    try
+                    {
+                        // Load the image file using the correct extension
+                        Bitmap tileBitmap = new Bitmap(filePath);
+                        return new Tile(tileBitmap, 1 << zoom);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error loading tile: {ex.Message}");
+                        // If there's an error with the current file, continue to the next extension
+                    }
+                }
             }
+
+            // If no file is found or all attempts to load a file fail, return null
+            return null;
         }
+
 
         public TileSizeInfo GetTileSize(float scale)
         {
