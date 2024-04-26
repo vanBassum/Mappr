@@ -76,21 +76,59 @@ namespace Mappr
                 GetFileCallback = (z, x, y) => $"maps/tarkov/labs/{z}/{x}x{y}.png"
             };
 
-            downloader.Download(7, progress: new Progress<float>(p => this.Text = $"{p:P2}"));
-           // MakeImage i = new ();
+            //downloader.Download(7, progress: new Progress<float>(p => this.Text = $"{p:P2}"));
+            //MakeImage i = new ();
+
+            //ImageTiler tiler = new ImageTiler();
+            //tiler.ProcessImage(@"C:\Users\bas\Desktop\map2.png", @"C:\Users\bas\Desktop\tiles");
 
 
+
+            //worldPoints.AddRange(new Vector2[] {
+            //    new Vector2(3259.0862f, 5148.1704f),
+            //     new Vector2(-1660.7303f, -1029.1011f),
+            //});
+            //
+            //mapPoints.AddRange(new Vector2[] {
+            //    new Vector2(105.21094f, 46.25f),
+            //     new Vector2(35.265625f, 134.11719f),
+            //});
 
             worldPoints.AddRange(new Vector2[] {
-                new Vector2(3259.0862f, 5148.1704f),
-                 new Vector2(-1660.7303f, -1029.1011f),
+                new Vector2(0, 0),
+                 new Vector2(1, 1),
+                 new Vector2(10, 10)
             });
 
             mapPoints.AddRange(new Vector2[] {
-                new Vector2(105.21094f, 46.25f),
-                 new Vector2(35.265625f, 134.11719f),
+                new Vector2(0, 0),
+                 new Vector2(1.5f, 1),
+                 new Vector2(10, 10),
+
             });
-            scaler2 = CoordinateRegression.Fit(worldPoints.ToArray(), mapPoints.ToArray());
+
+            // Define the world and map coordinates
+            Vector2[] world = new Vector2[]
+            {
+                new Vector2(1, 1),
+                new Vector2(2, 2),
+                new Vector2(3, 3),
+                new Vector2(4, 4),
+                new Vector2(5, 5)
+            };
+
+            Vector2[] map = new Vector2[]
+            {
+                new Vector2(2, 2),
+                new Vector2(4, 4),
+                new Vector2(7, 6),
+                new Vector2(8, 8),
+                new Vector2(10, 10)
+            };
+
+            scaler2 = CoordinateRegression.Fit(world, map);
+            var errors = CoordinateRegression.Error(world, map, scaler2);
+
             Start();
         }
 
@@ -128,64 +166,47 @@ namespace Mappr
         }
     }
 
-
-    class MakeImage
+    public class ErrorsEntity : IDrawable
     {
-        // Method to get the file path of a tile based on its coordinates
-        string GetFile(int z, int x, int y) => $"maps/tarkov/interchange/{z}/{x}x{y}.png";
+        public Vector2[] World { get; set; }
+        public Vector2[] Map { get; set; }
+        public Vector2[] Errors { get; set; }
 
-        public MakeImage()
+
+        virtual public void Draw(Graphics g, CoordinateScaler2D scaler, Vector2 screenSize)
         {
-            int z = 6; // Zoom level, assuming 6 in this example
-            int tileWidth = 256; // Width of each tile in pixels
-            int tileHeight = 256; // Height of each tile in pixels
-            int tileCountX = 36; // Number of tiles in width
-            int tileCountY = 36; // Number of tiles in height (you mentioned 36x36)
-
-            // Calculate the size of the large image
-            int largeImageWidth = tileCountX * tileWidth;
-            int largeImageHeight = tileCountY * tileHeight;
-
-            // Create a large bitmap to hold the combined image
-            using (Bitmap largeImage = new Bitmap(largeImageWidth, largeImageHeight))
+            var screenPos = scaler.ApplyTransformation(MapPosition);
+            bool isObjectOnScreen = screenPos.X >= 0 && screenPos.Y >= 0 && screenPos.X < screenSize.X && screenPos.Y < screenSize.Y;
+            if (isObjectOnScreen)
             {
-                // Create a graphics object from the large bitmap
-                using (Graphics g = Graphics.FromImage(largeImage))
-                {
-                    // Loop through each tile
-                    for (int x = 0; x < tileCountX; x++)
-                    {
-                        for (int y = 0; y < tileCountY; y++)
-                        {
-                            // Get the file path for the current tile
-                            string filePath = GetFile(z, x, y);
-
-                            // Check if the file exists before loading it
-                            if (!File.Exists(filePath))
-                            {
-                                Console.WriteLine($"Tile file not found: {filePath}");
-                                continue;
-                            }
-
-                            // Load the tile image from the file
-                            using (Bitmap tile = new Bitmap(filePath))
-                            {
-                                // Calculate the position of the tile in the large image
-                                int offsetX = x * tileWidth;
-                                int offsetY = y * tileHeight;
-
-                                // Draw the tile onto the large image at the calculated position
-                                g.DrawImage(tile, offsetX, offsetY, tileWidth, tileHeight);
-                            }
-                        }
-                    }
-                }
-
-                // Save the large image to the specified file path
-                string saveTo = @"C:\Users\bas\Desktop\map.png";
-                largeImage.Save(saveTo, System.Drawing.Imaging.ImageFormat.Png);
-                Console.WriteLine($"Combined image saved to {saveTo}");
+                if (MouseHover)
+                    DrawCross(g, Pens.Blue, screenPos);
+                else
+                    DrawCross(g, Pens.Red, screenPos);
             }
+
+        }
+
+        void DrawCross(Graphics g, Pen pen, Vector2 screenPos, int crossSize = 10)
+        {
+            // Calculate the starting and ending points for the cross lines
+            Point startPointHorizontal = new Point((int)screenPos.X - crossSize, (int)screenPos.Y);
+            Point endPointHorizontal = new Point((int)screenPos.X + crossSize, (int)screenPos.Y);
+            Point startPointVertical = new Point((int)screenPos.X, (int)screenPos.Y - crossSize);
+            Point endPointVertical = new Point((int)screenPos.X, (int)screenPos.Y + crossSize);
+
+            // Draw the horizontal and vertical lines to create the cross
+            g.DrawLine(pen, startPointHorizontal, endPointHorizontal);
+            g.DrawLine(pen, startPointVertical, endPointVertical);
+        }
+
+
+        public bool IsMouseWithinEntityBounds(MapMouseEventArgs e)
+        {
+            float radius = 5f;
+            var eScreen = e.Scaler.ApplyTransformation(MapPosition);
+            return e.MouseScreenPosition.X >= eScreen.X - radius && e.MouseScreenPosition.X <= eScreen.X + radius
+                && e.MouseScreenPosition.Y >= eScreen.Y - radius && e.MouseScreenPosition.Y <= eScreen.Y + radius;
         }
     }
 
