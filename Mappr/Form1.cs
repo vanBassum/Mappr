@@ -1,4 +1,5 @@
 using Mappr.Controls;
+using Mappr.Download;
 using Mappr.Entities;
 using Mappr.Extentions;
 using Mappr.Kernel;
@@ -16,7 +17,6 @@ namespace Mappr
         PlayerEntity playerEntity = new PlayerEntity(new Vector2(75, 75));
         ContextMenuManager<MapMouseEventArgs> menuManager;
 
-        System.Timers.Timer timer = new();
         MemoryManager memoryManager = new MemoryManager();
 
         Vector2 playerWorldPos;
@@ -53,7 +53,7 @@ namespace Mappr
 
 
 
-            FileTileSource fileSource = new FileTileSource("maps/gta5");
+            FileTileSource fileSource = new FileTileSource("maps/tarkov/interchange");
             ScalerTileSource scaler = new ScalerTileSource(fileSource);
             CachingTileSource cashing = new CachingTileSource(scaler, (1920 * 1080) * 5 / (128 * 128));
             mapView.TileSource = cashing;
@@ -62,7 +62,7 @@ namespace Mappr
                 .AddInteraction(new EntityDragging(entitySource))
                 .AddInteraction(new EntityHover(entitySource))
                 .AddInteraction(new Panning())
-                .AddInteraction(new Zooming(a => a.WithMinZoom(1f).WithMaxZoom(128f).WithZoomFactor(2f)))
+                .AddInteraction(new Zooming(a => a.WithMinZoom(1f).WithMaxZoom(64f).WithZoomFactor(2f)))
                 .AddInteraction(new ShowContextMenu(menuManager))
                 );
 
@@ -70,14 +70,15 @@ namespace Mappr
             entitySource.Add(new MapEntity { MapPosition = new Vector2(50, 50) });
             entitySource.Add(playerEntity);
 
+            MapDownloader downloader = new MapDownloader
+            {
+                GetUriCallback = (z, x, y) => $"https://images.gamemaps.co.uk/mapTiles/tarkov/the_labs_clean_2d_monkimonkimonk/{z}/{x}/{y}.png",
+                GetFileCallback = (z, x, y) => $"maps/tarkov/labs/{z}/{x}x{y}.png"
+            };
 
+            downloader.Download(7, progress: new Progress<float>(p => this.Text = $"{p:P2}"));
+           // MakeImage i = new ();
 
-            timer.Interval = 100;
-            timer.Elapsed += Timer_Elapsed;
-            timer.Start();
-
-            //MapDownloader downlaoder = new MapDownloader();
-            //downlaoder.Download(7, 64);
 
 
             worldPoints.AddRange(new Vector2[] {
@@ -125,11 +126,68 @@ namespace Mappr
                 }
             });
         }
+    }
 
 
-        private void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    class MakeImage
+    {
+        // Method to get the file path of a tile based on its coordinates
+        string GetFile(int z, int x, int y) => $"maps/tarkov/interchange/{z}/{x}x{y}.png";
+
+        public MakeImage()
         {
-            
+            int z = 6; // Zoom level, assuming 6 in this example
+            int tileWidth = 256; // Width of each tile in pixels
+            int tileHeight = 256; // Height of each tile in pixels
+            int tileCountX = 36; // Number of tiles in width
+            int tileCountY = 36; // Number of tiles in height (you mentioned 36x36)
+
+            // Calculate the size of the large image
+            int largeImageWidth = tileCountX * tileWidth;
+            int largeImageHeight = tileCountY * tileHeight;
+
+            // Create a large bitmap to hold the combined image
+            using (Bitmap largeImage = new Bitmap(largeImageWidth, largeImageHeight))
+            {
+                // Create a graphics object from the large bitmap
+                using (Graphics g = Graphics.FromImage(largeImage))
+                {
+                    // Loop through each tile
+                    for (int x = 0; x < tileCountX; x++)
+                    {
+                        for (int y = 0; y < tileCountY; y++)
+                        {
+                            // Get the file path for the current tile
+                            string filePath = GetFile(z, x, y);
+
+                            // Check if the file exists before loading it
+                            if (!File.Exists(filePath))
+                            {
+                                Console.WriteLine($"Tile file not found: {filePath}");
+                                continue;
+                            }
+
+                            // Load the tile image from the file
+                            using (Bitmap tile = new Bitmap(filePath))
+                            {
+                                // Calculate the position of the tile in the large image
+                                int offsetX = x * tileWidth;
+                                int offsetY = y * tileHeight;
+
+                                // Draw the tile onto the large image at the calculated position
+                                g.DrawImage(tile, offsetX, offsetY, tileWidth, tileHeight);
+                            }
+                        }
+                    }
+                }
+
+                // Save the large image to the specified file path
+                string saveTo = @"C:\Users\bas\Desktop\map.png";
+                largeImage.Save(saveTo, System.Drawing.Imaging.ImageFormat.Png);
+                Console.WriteLine($"Combined image saved to {saveTo}");
+            }
         }
     }
+
+
 }
