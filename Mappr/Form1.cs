@@ -7,6 +7,7 @@ using Mappr.Tiles;
 using System.Buffers;
 using System.Diagnostics;
 using System.Numerics;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -87,7 +88,8 @@ namespace Mappr
             List<IMemoryReader> readers = new List<IMemoryReader> {
                 new EFTGameObjectManagerConverter(),
                 new EFTLocalGameWorldConverter(),
-                new EFTPlayerConverter(),            
+                new EFTPlayerConverter(),          
+                new TransformConverter()
             };
 
             MemoryManager memoryManager = new MemoryManager(readers);
@@ -126,23 +128,12 @@ namespace Mappr
             nint gameObjectManager = memoryManager.ReadAddress(unityBase + 0x17FFD28);
 
             EFTGameObjectManager? world = memoryManager.Read<EFTGameObjectManager>(gameObjectManager);
+            var localPlayerPos = world?.GameWorld?.MainPlayer?.Position ?? Vector3.Zero;
+
+
+            localPlayerWorldPos = new Vector2(localPlayerPos.X, localPlayerPos.X);
 
             return true;
-
-            //nint gameWorld = GetLocalGameWorld(memoryManager);
-            //
-            //if (gameWorld == 0)
-            //    return false;
-            //
-            //nint localGameWorld = memoryManager.ReadChain(gameWorld + 0x30, 0x18, 0x28);
-            //
-            //nint localPlayerBase = memoryManager.Read_Address(localGameWorld + 0x118);
-            //var localPlayerPos = GetPlayerPosition(memoryManager, localPlayerBase);
-            //localPlayerWorldPos = new Vector2(localPlayerPos.X, localPlayerPos.Y);
-
-
-            return true;
-
         }
     }
 
@@ -308,7 +299,7 @@ namespace Mappr
             nint activeNodes = memoryManager.ReadChain(gameObjectManager + 0x28, 0);
             nint lastActiveNode = memoryManager.ReadChain(gameObjectManager + 0x20, 0);
 
-            nint cObject = activeNodes;
+            nint cObject = memoryManager.ReadAddress(activeNodes + 0x8);    //FIrst one is not okay?
 
             do
             {
@@ -338,11 +329,13 @@ namespace Mappr
 
     public class EFTLocalGameWorldConverter : IMemoryReader<EFTLocalGameWorld>
     {
-        public EFTLocalGameWorld Convert(MemoryManager manager, nint address)
+        public EFTLocalGameWorld Convert(MemoryManager manager, nint gameWorld)
         {
+            nint mainPlayerAddr = manager.ReadChain(gameWorld + 0x30, 0x18, 0x28, 0x118);
+
             return new EFTLocalGameWorld
             {
-                MainPlayer = manager.Read<EFTPlayer>(address + 0x118)
+                MainPlayer = manager.Read<EFTPlayer>(mainPlayerAddr)
             };
         }
     }
@@ -379,7 +372,7 @@ namespace Mappr
 
             while (transformIndex >= 0)
             {
-                var tMatrix = memoryManager.Read<Transform3>(matrix_list + 0x28 * transformIndex);
+                var tMatrix = memoryManager.Read<Transform>(matrix_list + 0x28 * transformIndex);
                 if (tMatrix == null)
                     return Vector3.Zero;
 
@@ -421,11 +414,11 @@ namespace Mappr
 
 
 
-    public class Transform3Converter : IMemoryReader<Transform3>
+    public class TransformConverter : IMemoryReader<Transform>
     {
-        public Transform3 Convert(MemoryManager manager, nint address)
+        public Transform Convert(MemoryManager manager, nint address)
         {
-            Transform3 transform = new Transform3();
+            Transform transform = new Transform();
             transform.Position = manager.Read<Vector3>(address);
             transform.Rotation = manager.Read<Quaternion>(address + 12);
             transform.Scale = manager.Read<Vector3>(address + 28);
@@ -434,7 +427,7 @@ namespace Mappr
     }
 
 
-    public class Transform3
+    public class Transform
     {
         public Vector3 Position { get; set; }       //3x 32
         public Quaternion Rotation { get; set; }    //4x 32
