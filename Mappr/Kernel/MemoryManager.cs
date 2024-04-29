@@ -1,150 +1,135 @@
-﻿using System.Diagnostics;
+﻿using System.Configuration;
+using System.Diagnostics;
+using System.Net;
 using System.Text;
+using Mappr.Kernel.DataConverters;
 
 namespace Mappr.Kernel
 {
-
-    public class MemoryManager
+    public class MemoryManager : IDisposable
     {
-        Process? process;
-        IntPtr processHandle;
+        private readonly Dictionary<Type, IMemoryReader> _converters;
+        private Process? _process;
+        private nint _processHandle;
+
+        private IMemoryReader[] basicConverters = {
+            new IntConverter(),
+            new FloatConverter(),
+            new Vector3Converter(),
+            new Vector4Converter(),
+            new QuaternionConverter(),
+            new StringConverter(),
+        };
+
+
+        public MemoryManager(IEnumerable<IMemoryReader> converters)
+        {
+            _converters = converters.ToDictionary(converter => converter.DataType, converter => converter);
+
+            foreach(var converter in basicConverters)
+            {
+                if (!_converters.ContainsKey(converter.DataType))
+                    _converters.Add(converter.DataType, converter);
+            }
+        }
 
         #region ProcessAttach
-
-        public bool attach(string processname)
+        public bool AttachToProcess(string processName)
         {
             try
             {
-                process = Process.GetProcessesByName(processname).FirstOrDefault();
-                if (process == null)
+                _process = Process.GetProcessesByName(processName).FirstOrDefault();
+                if (_process == null)
+                {
                     return false;
-                processHandle = Kernel32.OpenProcess(Kernel32.PROCESS_WM_READ | Kernel32.PROCESS_WM_WRITE | Kernel32.PROCESS_WM_OPERATION, false, process.Id);
-                return true;
-            }
-            catch
-            {
-                if (process != null)
-                {
-                    process.Close();
-                    process.Dispose();
                 }
-            }
 
-            return false;
-        }
-
-        public bool IsAttached()
-        {
-            if (process != null)
-            {
+                _processHandle = Kernel32.OpenProcess(Kernel32.PROCESS_WM_READ | Kernel32.PROCESS_WM_WRITE | Kernel32.PROCESS_WM_OPERATION, false, _process.Id);
                 return true;
             }
-            return false;
+            catch (Exception ex)
+            {
+                // Log or handle exception appropriately
+                Console.WriteLine($"Error attaching to process: {ex.Message}");
+                return false;
+            }
         }
 
-        public bool detach()
+        public bool IsAttached => _process != null;
+
+        public bool DetachFromProcess()
         {
             try
             {
-                if (process != null)
-                {
-                    process.Close();
-                    process.Dispose();
-                }
+                _process?.Dispose();
+                _process = null;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                // Log or handle exception appropriately
+                Console.WriteLine($"Error detaching from process: {ex.Message}");
+                return false;
             }
-
-            return false;
         }
+#endregion
 
 
-
-        #endregion
 
         public nint GetProcessBase()
         {
-            return process?.MainModule?.BaseAddress ?? nint.Zero;
+            return _process?.MainModule?.BaseAddress ?? nint.Zero;
         }
 
         public nint GetProcessModuleBase(string moduleName)
         {
-            var mod = process?.Modules.Cast<ProcessModule>().Where(p => p.ModuleName == moduleName).FirstOrDefault();
-            if (mod != null)
-                return mod.BaseAddress;
-            return nint.Zero;
+            var module = _process?.Modules.Cast<ProcessModule>().FirstOrDefault(p => p.ModuleName == moduleName);
+            return module?.BaseAddress ?? nint.Zero;
         }
 
-
-        #region Read
-        public byte[] Read_Bytes(IntPtr address, int length)
+        public T? Read<T>(nint address)
         {
-            byte[] buffer = new byte[length];
-            IntPtr bytesRead = IntPtr.Zero;
-            Kernel32.ReadProcessMemory(processHandle, address, buffer, buffer.Length, out bytesRead);
+            var type = typeof(T);
+            if (!_converters.TryGetValue(type, out var converterObj))
+                throw new NotSupportedException($"Type {type} is not supported.");
+
+            IMemoryReader<T> converter = (IMemoryReader<T>)converterObj;
+            return converter.Convert(this, address);
+        }
+
+        public nint ReadAddress(nint address)
+        {
+            byte[] buffer = ReadBytes(address, nint.Size);
+            return nint.Size == 4 ? (nint)BitConverter.ToUInt32(buffer, 0) : (nint)BitConverter.ToUInt64(buffer, 0);
+        }
+
+        public nint ReadChain(params nint[] addressChain)
+        {
+            nint address = 0;
+
+            foreach(var v in addressChain)
+            {
+                address = ReadAddress(address + v);
+                if (address == 0)
+                    return 0;
+            }
+                
+            return address;
+        }
+
+        public byte[] ReadBytes(nint address, int length)
+        {
+            var buffer = new byte[length];
+
+            if (!Kernel32.ReadProcessMemory(_processHandle, address, buffer, buffer.Length, out nint bytesRead))
+                throw new InvalidOperationException($"Failed to read memory at address {address}");
+
             return buffer;
         }
 
-        public IntPtr Read_Address(IntPtr address)
+        public void Dispose()
         {
-            byte[] buffer = Read_Bytes(address, IntPtr.Size);
-            if (IntPtr.Size == 4)
-                return new IntPtr(Read_Int32(address));
-            else
-                return new IntPtr(Read_Int64(address));
+            DetachFromProcess();
         }
-
-        public int Read_Int32(IntPtr address)
-        {
-            byte[] buffer = Read_Bytes(address, 4);
-            return BitConverter.ToInt32(buffer, 0);
-        }
-
-        public long Read_Int64(IntPtr address)
-        {
-            byte[] buffer = Read_Bytes(address, 8);
-            return BitConverter.ToInt64(buffer, 0);
-        }
-
-        public float Read_Float(IntPtr address)
-        {
-            byte[] buffer = Read_Bytes(address, 4);
-            return BitConverter.ToSingle(buffer, 0);
-        }
-
-        public double Read_Double(IntPtr address)
-        {
-            byte[] buffer = Read_Bytes(address, 4);
-            return BitConverter.ToDouble(buffer, 0);
-        }
-
-        public string Read_String(IntPtr address, int strLength)
-        {
-            byte[] buffer = Read_Bytes(address, strLength);
-            // Convert the byte array to ASCII string
-            string str = Encoding.ASCII.GetString(buffer);
-            // Find the index of the null character ('\0')
-            int nullCharIndex = str.IndexOf('\0');
-            if (nullCharIndex >= 0)
-            {
-                // If null character found, return substring up to that point
-                return str.Substring(0, nullCharIndex);
-            }
-            // If null character not found, return the full string
-            return str;
-        }
-
-        public byte Read_Byte(IntPtr address)
-        {
-            byte[] buffer = Read_Bytes(address, 1);
-            return buffer[0];
-        }
-        #endregion
-
-
-
     }
-
 }
