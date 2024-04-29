@@ -7,6 +7,7 @@ namespace Mappr
 {
     public class PlayerEntity : MapEntity
     {
+        public Vector2 MapPosition { get; set; }
         public float Rotation { get; set; } // Angle in radians
 
         public PlayerEntity(Vector2 initialPosition)
@@ -25,9 +26,9 @@ namespace Mappr
             Vector2 arrowEnd = screenPosition + new Vector2(MathF.Cos(Rotation), MathF.Sin(Rotation)) * 20; // Adjust arrow length as needed
 
             // Draw the player icon (e.g., a circle) at the player's position
-            if(MouseHover)
-                g.FillEllipse(Brushes.Blue, screenPosition.X - 5, screenPosition.Y - 5, 10, 10);
-            else
+            //if(MouseHover)
+            //    g.FillEllipse(Brushes.Blue, screenPosition.X - 5, screenPosition.Y - 5, 10, 10);
+            //else
                 g.FillEllipse(Brushes.Red, screenPosition.X - 5, screenPosition.Y - 5, 10, 10);
 
             // Draw the arrow
