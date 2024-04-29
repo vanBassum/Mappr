@@ -19,18 +19,11 @@ namespace Mappr.Controls
         private readonly DrawableRenderer drawableRenderer;
         private readonly TileRenderer tileRenderer;
         private readonly MapViewInteractionsManager interactionsManager;
-        private MapEntitySource? mapEntitySource;
+        private readonly MapEntitySource mapEntitySource;
         private ITileSource? tileSource;
 
-        public MapEntitySource? MapEntitySource
-        {
-            get => mapEntitySource;
-            set
-            {
-                mapEntitySource = value;
-                // interactions.MapEntitySource = value;
-            }
-        }
+        public List<MapEntity> Entities => mapEntitySource.Entities;
+
         public ITileSource? TileSource
         {
             get => tileSource;
@@ -50,6 +43,7 @@ namespace Mappr.Controls
             drawableRenderer = new DrawableRenderer(mapScreenScaler);
             tileRenderer = new TileRenderer(mapScreenScaler);
             interactionsManager = new MapViewInteractionsManager(mapScreenScaler, pbOverlay);
+            mapEntitySource = new MapEntitySource();
 
             this.Controls.Add(pbTiles);
             pbTiles.Controls.Add(pbOverlay);
@@ -71,11 +65,13 @@ namespace Mappr.Controls
             interactionsManager.MouseUp += (s, e) => MouseUp?.Invoke(this, e);
             interactionsManager.MouseMove += (s, e) => MouseMove?.Invoke(this, e);
             interactionsManager.MouseClick += (s, e) => MouseClick?.Invoke(this, e);
+            
 
             mapScreenScaler.Scale = Vector2.One * 8;
             mapScreenScaler.Offset = new Vector2(0, 0);
 
             interactionsManager.RequestRefresh += (s, e) => Redraw();
+            interactionsManager.AddInteraction(mapEntitySource);
         }
 
 
@@ -105,13 +101,9 @@ namespace Mappr.Controls
             tileRenderer.RenderTiles(g, TileSource, this.ClientSize.ToVector2());
         }
 
-
         void DrawOverlay(Graphics g)
         {
-            if (MapEntitySource == null)
-                return;
-
-            drawableRenderer.Render(g, MapEntitySource.GetDrawables(), this.ClientSize.ToVector2());
+            drawableRenderer.Render(g, mapEntitySource.Entities, this.ClientSize.ToVector2());
         }
     }
 

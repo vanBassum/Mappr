@@ -1,18 +1,11 @@
 using Mappr.Controls;
-using Mappr.Download;
 using Mappr.Entities;
 using Mappr.Extentions;
 using Mappr.Kernel;
 using Mappr.MapInteractions;
 using Mappr.Tiles;
-using System;
 using System.Buffers;
-using System.Diagnostics;
-using System.Drawing.Drawing2D;
 using System.Numerics;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography.Xml;
-using System.Threading.Tasks.Dataflow;
 
 namespace Mappr
 {
@@ -23,16 +16,8 @@ namespace Mappr
         MapEntitySource entitySource = new MapEntitySource();
         PlayerEntity playerEntity = new PlayerEntity(new Vector2(75, 75));
         ContextMenuManager<MapMouseEventArgs> menuManager;
-
         MemoryManager memoryManager = new MemoryManager();
-
-        Vector2 playerWorldPos;
-
-        List<Vector2> worldPoints = new List<Vector2>();
-        List<Vector2> mapPoints = new List<Vector2>();
-
-        CoordinateScaler2D? scaler2;
-
+        Vector2 playerWorldPos = Vector2.Zero;
 
 
         public Form1()
@@ -43,94 +28,63 @@ namespace Mappr
             mapView.Dock = DockStyle.Fill;
             mapView.BorderStyle = BorderStyle.FixedSingle;
 
+            Calibrator calibrator = new Calibrator(mapView);
+
             menuManager = new ContextMenuManager<MapMouseEventArgs>(mapView);
-            menuManager.AddMenuItem("Add point", e =>
-            {
-                entitySource.Add(new MapEntity { MapPosition = e.MouseMapPosition });
-                mapView.Redraw();
-            });
+            //menuManager.AddMenuItem("Add point", e =>
+            //{
+            //    //entitySource.Add(new MapEntity { MapPosition = e.MouseMapPosition });
+            //    mapView.Redraw();
+            //});
             menuManager.AddMenuItem("Im here!", e =>
             {
-                worldPoints.Add(playerWorldPos);
-                mapPoints.Add(e.MouseMapPosition);
-
-                if (worldPoints.Count >= 2)
-                    scaler2 = CoordinateRegression.Fit(worldPoints.ToArray(), mapPoints.ToArray());
+                calibrator.AddPoint(playerWorldPos, e.MouseMapPosition);
             });
 
 
-
-            FileTileSource fileSource = new FileTileSource("maps/tarkov/woods");
-            ScalerTileSource scaler = new ScalerTileSource(fileSource);
-            CachingTileSource cashing = new CachingTileSource(scaler, (1920 * 1080) * 5 / (128 * 128));
-            mapView.TileSource = cashing;
-            mapView.MapEntitySource = entitySource;
+            FileTileSource tileFileSource = new FileTileSource("maps/tarkov/woods");
+            ScalerTileSource tileScaler = new ScalerTileSource(tileFileSource);
+            CachingTileSource tileCashing = new CachingTileSource(tileScaler, (1920 * 1080) * 5 / (128 * 128));
+            mapView.TileSource = tileCashing;
             mapView.ConfigInteractions(c => c
-                .AddInteraction(new EntityDragging(entitySource))
-                .AddInteraction(new EntityHover(entitySource))
+                //.AddInteraction(new EntityDragging(entitySource))
+                //.AddInteraction(new EntityHover(entitySource))
                 .AddInteraction(new Panning())
                 .AddInteraction(new Zooming(a => a.WithMinZoom(1f).WithMaxZoom(64f).WithZoomFactor(2f)))
                 .AddInteraction(new ShowContextMenu(menuManager))
                 );
 
-            entitySource.Add(new MapEntity { MapPosition = new Vector2(100, 100) });
-            entitySource.Add(new MapEntity { MapPosition = new Vector2(50, 50) });
-            entitySource.Add(playerEntity);
+            // mapView.Entities.Add(new MapEntity { MapPosition = new Vector2(100, 100) });
+            // mapView.Entities.Add(new MapEntity { MapPosition = new Vector2(50, 50) });
+            mapView.Entities.Add(playerEntity);
 
-            MapDownloader downloader = new MapDownloader
-            {
-                GetUriCallback = (z, x, y) => $"https://images.gamemaps.co.uk/mapTiles/tarkov/the_labs_clean_2d_monkimonkimonk/{z}/{x}/{y}.png",
-                GetFileCallback = (z, x, y) => $"maps/tarkov/labs/{z}/{x}x{y}.png"
-            };
-
-            //downloader.Download(7, progress: new Progress<float>(p => this.Text = $"{p:P2}"));
-            //MakeImage i = new ();
-
-            //ImageTiler tiler = new ImageTiler();
-            //tiler.ProcessImage(@"C:\Users\bas\Desktop\map2.png", @"C:\Users\bas\Desktop\tiles");
-
-
-
-            //worldPoints.AddRange(new Vector2[] {
-            //    new Vector2(3259.0862f, 5148.1704f),
-            //     new Vector2(-1660.7303f, -1029.1011f),
-            //});
-            //
-            //mapPoints.AddRange(new Vector2[] {
-            //    new Vector2(105.21094f, 46.25f),
-            //     new Vector2(35.265625f, 134.11719f),
-            //});
-
-
-            //scaler2 = CoordinateRegression.Fit(worldPoints.ToArray(), mapPoints.ToArray());
+            calibrator.AddPoint(new Vector2(0, 0), new Vector2(0, 0));
+            calibrator.AddPoint(new Vector2(5, 5), new Vector2(5, 5));
+            calibrator.AddPoint(new Vector2(10, 10), new Vector2(10, 9));
+            calibrator.AddPoint(new Vector2(20, 20), new Vector2(20, 20));
 
             Start();
-
-
-
-
         }
 
         void PositionUpdated()
         {
-            this.InvokeIfRequired(() => {
+            this.InvokeIfRequired(() =>
+            {
                 this.Text = playerWorldPos.ToString("F3");
             });
 
 
-            if (scaler2 == null)
-                return;
-
-            var playerMapPos = scaler2.ApplyTransformation(playerWorldPos);
-            playerEntity.MapPosition = playerMapPos;
-            mapView.InvokeIfRequired(() =>
-            {
-                mapView.SetCenter(playerMapPos);
-                mapView.Redraw();
-            });
+            //if (scaler2 == null)
+            //    return;
+            //
+            //var playerMapPos = scaler2.ApplyTransformation(playerWorldPos);
+            //playerEntity.MapPosition = playerMapPos;
+            //mapView.InvokeIfRequired(() =>
+            //{
+            //    mapView.SetCenter(playerMapPos);
+            //    mapView.Redraw();
+            //});
         }
-
-
         public void Start()
         {
             Task.Run(async () =>
@@ -139,7 +93,7 @@ namespace Mappr
                 {
                     Vector3? worldPos = GetWorldPos();
 
-                    if(worldPos == null)
+                    if (worldPos == null)
                     {
                         await Task.Delay(1000);
                     }
@@ -150,8 +104,6 @@ namespace Mappr
                 }
             });
         }
-
-
         Vector3? GetWorldPos()
         {
             if (!memoryManager.IsAttached())
@@ -256,7 +208,96 @@ namespace Mappr
 
 
 
- 
+    public class CalibrationPoint : MapEntity
+    {
+        private bool hover = false;
+        public Vector2 CalculatedMapPosition { get; set; }
+        public Vector2 ClickedWorldPosition { get; set; }
+        public Vector2 ClickedMapPosition { get; set; }
+
+
+        public override void Draw(Graphics g, CoordinateScaler2D scaler, Vector2 screenSize)
+        {
+            var screenPos = scaler.ApplyTransformation(CalculatedMapPosition);
+            bool isObjectOnScreen = screenPos.X >= 0 && screenPos.Y >= 0 && screenPos.X < screenSize.X && screenPos.Y < screenSize.Y;
+            if (isObjectOnScreen)
+            {
+                var clickedScreenPos = scaler.ApplyTransformation(ClickedMapPosition); 
+
+                if(hover)
+                {
+                    DrawCross(g, Pens.Green, screenPos);
+                    DrawCross(g, Pens.Green, clickedScreenPos);
+                }
+                else
+                {
+                    DrawCross(g, Pens.Red, screenPos);
+                    DrawCross(g, Pens.Yellow, clickedScreenPos);
+                }
+            }
+        }
+
+        public override void HandleMouseMove(object sender, MapMouseEventArgs e)
+        {
+            float distance = Vector2.Distance(e.MouseMapPosition, CalculatedMapPosition);
+            hover = distance < 2.5f;
+            e.RequestRedraw = true;
+        }
+
+
+        void DrawCross(Graphics g, Pen pen, Vector2 screenPos, int crossSize = 10)
+        {
+            // Calculate the starting and ending points for the cross lines
+            Point startPointHorizontal = new Point((int)screenPos.X - crossSize, (int)screenPos.Y);
+            Point endPointHorizontal = new Point((int)screenPos.X + crossSize, (int)screenPos.Y);
+            Point startPointVertical = new Point((int)screenPos.X, (int)screenPos.Y - crossSize);
+            Point endPointVertical = new Point((int)screenPos.X, (int)screenPos.Y + crossSize);
+
+            // Draw the horizontal and vertical lines to create the cross
+            g.DrawLine(pen, startPointHorizontal, endPointHorizontal);
+            g.DrawLine(pen, startPointVertical, endPointVertical);
+        }
+    }
+
+
+    public class Calibrator
+    {
+        List<CalibrationPoint> calibrationPoints = new List<CalibrationPoint>();
+        private readonly MapView mapView;
+        CoordinateScaler2D scaler;
+
+        public Calibrator(MapView mapView)
+        {
+            this.mapView = mapView;
+            this.scaler = new CoordinateScaler2D(Vector2.One, Vector2.Zero);
+        }
+
+        public void AddPoint(Vector2 worldPos, Vector2 mapPos)
+        {
+            CalibrationPoint calibrationPoint = new CalibrationPoint()
+            {
+                ClickedMapPosition = mapPos,
+                ClickedWorldPosition = worldPos,
+                CalculatedMapPosition = mapPos
+            };
+            calibrationPoints.Add(calibrationPoint);
+            mapView.Entities?.Add(calibrationPoint);
+            
+            
+            if (calibrationPoints.Count >= 2)
+            {
+                var worldPositions = calibrationPoints.Select(c=>c.ClickedWorldPosition).ToArray();
+                var mapPositions = calibrationPoints.Select(c=>c.ClickedMapPosition).ToArray();
+                scaler = CoordinateRegression.Fit(worldPositions, mapPositions);
+                foreach (var c in calibrationPoints)
+                    c.CalculatedMapPosition = scaler.ApplyTransformation(c.ClickedWorldPosition);
+            }
+        }
+    }
+
+
+
+
 
 
 
@@ -297,7 +338,7 @@ namespace Mappr
             transform.Scale = memoryManager.Read_Vector3(address + 28);         // 28 32 36
             return transform;
         }
-        
+
         public static Transform4 Read_Transform4(this MemoryManager memoryManager, nint address)
         {
             Transform4 transform = new Transform4();
@@ -310,7 +351,7 @@ namespace Mappr
 
 
     public class Transform3
-    { 
+    {
         public Vector3 Position { get; set; }       //3x 32
         public Quaternion Rotation { get; set; }    //4x 32
         public Vector3 Scale { get; set; }          //3x 32    
