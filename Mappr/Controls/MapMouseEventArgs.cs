@@ -5,7 +5,7 @@ namespace Mappr.Controls
 {
     public class MapMouseEventArgs
     {
-        public CoordinateScaler2D Scaler { get; }
+        public CoordinateScaler2D MapToScreenScaler { get; }
         public Vector2 MouseScreenPosition { get; set; }
         public Vector2 MouseMapPosition { get; set; }
         public bool RequestRedraw { get; set; } = false;
@@ -14,7 +14,7 @@ namespace Mappr.Controls
         public int Delta { get; set; }
         public MapMouseEventArgs(MouseEventArgs e, CoordinateScaler2D scaler)
         {
-            Scaler = scaler;
+            MapToScreenScaler = scaler;
             MouseScreenPosition = e.Location.ToVector2();
             MouseMapPosition = scaler.ReverseTransformation(MouseScreenPosition);
             MouseButton = e.Button;

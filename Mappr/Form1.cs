@@ -239,8 +239,9 @@ namespace Mappr
 
         public override void HandleMouseMove(object sender, MapMouseEventArgs e)
         {
-            float distance = Vector2.Distance(e.MouseMapPosition, CalculatedMapPosition);
-            hover = distance < 2.5f;
+            var screenPos = e.MapToScreenScaler.ApplyTransformation(CalculatedMapPosition);
+            float distance = Vector2.Distance(e.MouseScreenPosition, screenPos);
+            hover = distance < 10f;
             e.RequestRedraw = true;
         }
 

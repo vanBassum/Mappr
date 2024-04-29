@@ -52,7 +52,7 @@ namespace Mappr.MapInteractions
             if (isDragging)
             {
                 Vector2 delta = e.MouseScreenPosition - lastMouseLocation;
-                e.Scaler.Offset += delta;
+                e.MapToScreenScaler.Offset += delta;
                 lastMouseLocation = e.MouseScreenPosition;
                 e.RequestRedraw = true;
                 e.IsActive = false;

@@ -28,15 +28,15 @@ namespace Mappr.MapInteractions
             float zoomFactor = e.Delta > 0 ? this.ZoomFactor : 1f / this.ZoomFactor; // Adjust the zoom factor as needed
 
             // Calculate the new scale and offset
-            e.Scaler.Scale *= zoomFactor;
+            e.MapToScreenScaler.Scale *= zoomFactor;
 
-            if (e.Scaler.Scale.X < MinZoom)
-                e.Scaler.Scale = new Vector2(MinZoom, MinZoom);
-            if (e.Scaler.Scale.X > MaxZoom)
-                e.Scaler.Scale = new Vector2(MaxZoom, MaxZoom);
+            if (e.MapToScreenScaler.Scale.X < MinZoom)
+                e.MapToScreenScaler.Scale = new Vector2(MinZoom, MinZoom);
+            if (e.MapToScreenScaler.Scale.X > MaxZoom)
+                e.MapToScreenScaler.Scale = new Vector2(MaxZoom, MaxZoom);
 
             // Adjust the offset to pivot around the mouse position
-            e.Scaler.Offset = mouseScreenPosition - mouseMapPosition * e.Scaler.Scale;
+            e.MapToScreenScaler.Offset = mouseScreenPosition - mouseMapPosition * e.MapToScreenScaler.Scale;
             e.RequestRedraw = true;
         }
 
