@@ -86,10 +86,10 @@ namespace Mappr
         public void Start()
         {
             List<IMemoryReader> readers = new List<IMemoryReader> {
-                new EFTGameObjectManagerConverter(),
-                new EFTLocalGameWorldConverter(),
-                new EFTPlayerConverter(),          
-                new TransformConverter()
+                new EFTGameObjectManagerMemReader(),
+                new EFTLocalGameWorldMemReader(),
+                new EFTPlayerMemReader(),          
+                new EFTTransformMemReader()
             };
 
             MemoryManager memoryManager = new MemoryManager(readers);
@@ -284,7 +284,7 @@ namespace Mappr
         public EFTLocalGameWorld? GameWorld { get; set; }
     }
 
-    public class EFTGameObjectManagerConverter : IMemoryReader<EFTGameObjectManager>
+    public class EFTGameObjectManagerMemReader : IMemoryReader<EFTGameObjectManager>
     {
         public EFTGameObjectManager Convert(MemoryManager manager, nint gameObjectManager)
         {
@@ -327,7 +327,7 @@ namespace Mappr
         public EFTPlayer? MainPlayer { get; set; }
     }
 
-    public class EFTLocalGameWorldConverter : IMemoryReader<EFTLocalGameWorld>
+    public class EFTLocalGameWorldMemReader : IMemoryReader<EFTLocalGameWorld>
     {
         public EFTLocalGameWorld Convert(MemoryManager manager, nint gameWorld)
         {
@@ -343,7 +343,7 @@ namespace Mappr
 
 
 
-    public class EFTPlayerConverter : IMemoryReader<EFTPlayer>
+    public class EFTPlayerMemReader : IMemoryReader<EFTPlayer>
     {
         public EFTPlayer Convert(MemoryManager manager, nint address)
         {
@@ -407,6 +407,13 @@ namespace Mappr
         }
     }
 
+    public class Transform
+    {
+        public Vector3 Position { get; set; }       //3x 32
+        public Quaternion Rotation { get; set; }    //4x 32
+        public Vector3 Scale { get; set; }          //3x 32    
+    }
+
     public class EFTPlayer
     {
         public Vector3 Position { get; set; }
@@ -414,7 +421,7 @@ namespace Mappr
 
 
 
-    public class TransformConverter : IMemoryReader<Transform>
+    public class EFTTransformMemReader : IMemoryReader<Transform>
     {
         public Transform Convert(MemoryManager manager, nint address)
         {
@@ -427,12 +434,7 @@ namespace Mappr
     }
 
 
-    public class Transform
-    {
-        public Vector3 Position { get; set; }       //3x 32
-        public Quaternion Rotation { get; set; }    //4x 32
-        public Vector3 Scale { get; set; }          //3x 32    
-    }
+
 }
 
 

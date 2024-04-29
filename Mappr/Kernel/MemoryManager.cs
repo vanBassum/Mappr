@@ -13,12 +13,12 @@ namespace Mappr.Kernel
         private nint _processHandle;
 
         private IMemoryReader[] basicConverters = {
-            new IntConverter(),
-            new FloatConverter(),
-            new Vector3Converter(),
-            new Vector4Converter(),
-            new QuaternionConverter(),
-            new StringConverter(),
+            new IntMemReader(),
+            new FloatMemReader(),
+            new Vector3MemReader(),
+            new Vector4MemReader(),
+            new QuaternionMemReader(),
+            new StringMemReader(),
         };
 
 

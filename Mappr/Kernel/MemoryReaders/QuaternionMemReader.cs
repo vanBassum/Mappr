@@ -2,11 +2,11 @@
 
 namespace Mappr.Kernel.DataConverters
 {
-    public class Vector4Converter : IMemoryReader<Vector4>
+    public class QuaternionMemReader : IMemoryReader<Quaternion>
     {
-        public Vector4 Convert(MemoryManager manager, nint address)
+        public Quaternion Convert(MemoryManager manager, nint address)
         {
-            return new Vector4(
+            return new Quaternion(
                 manager.Read<float>(address + 0),
                 manager.Read<float>(address + 4),
                 manager.Read<float>(address + 8),

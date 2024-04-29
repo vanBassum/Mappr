@@ -2,7 +2,7 @@
 
 namespace Mappr.Kernel.DataConverters
 {
-    public class StringConverter : IMemoryReader<string>
+    public class StringMemReader : IMemoryReader<string>
     {
         public string Convert(MemoryManager manager, nint address)
         {

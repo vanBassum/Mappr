@@ -1,6 +1,6 @@
 ﻿namespace Mappr.Kernel.DataConverters
 {
-    public class FloatConverter : IMemoryReader<float>
+    public class FloatMemReader : IMemoryReader<float>
     {
         public float Convert(MemoryManager manager, nint address)
         {
