@@ -243,6 +243,7 @@ namespace Mappr
             float distance = Vector2.Distance(e.MouseScreenPosition, screenPos);
             hover = distance < 10f;
             e.RequestRedraw = true;
+            e.IsActive = hover;
         }
 
 
