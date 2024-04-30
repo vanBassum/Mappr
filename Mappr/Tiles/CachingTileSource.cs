@@ -16,6 +16,11 @@ namespace Mappr.Tiles
             _maxCacheSize = maxCacheSize;
         }
 
+        public void ClearCache()
+        {
+            _tileCache.Clear();
+        }
+
         public Tile? GetTile(int x, int y, float scale)
         {
             try
