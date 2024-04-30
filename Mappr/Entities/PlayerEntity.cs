@@ -8,12 +8,12 @@ namespace Mappr
     public class PlayerEntity : MapEntity
     {
         public Vector2 MapPosition { get; set; }
-        public float Rotation { get; set; } // Angle in radians
+        public Vector2 Rotation { get; set; } 
 
         public PlayerEntity(Vector2 initialPosition)
         {
             MapPosition = initialPosition;
-            Rotation = 0; // Initial rotation (e.g., facing north)
+            Rotation = Vector2.UnitX;
         }
 
         public override void Draw(Graphics g, CoordinateScaler2D scaler, Vector2 screenSize)
@@ -23,7 +23,7 @@ namespace Mappr
 
             // Calculate the endpoints of the arrow
             Vector2 arrowStart = screenPosition;
-            Vector2 arrowEnd = screenPosition + new Vector2(MathF.Cos(Rotation), MathF.Sin(Rotation)) * 20; // Adjust arrow length as needed
+            Vector2 arrowEnd = screenPosition + Rotation * 20;
 
             // Draw the player icon (e.g., a circle) at the player's position
             //if(MouseHover)

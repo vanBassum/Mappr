@@ -13,14 +13,13 @@ using System.Text.Json.Serialization;
 
 namespace Mappr
 {
-
     public partial class Form1 : Form
     {
         MapView mapView = new MapView();
-        MapEntitySource entitySource = new MapEntitySource();
         PlayerEntity playerEntity = new PlayerEntity(new Vector2(75, 75));
         ContextMenuManager<MapMouseEventArgs> menuManager;
         Vector2 localPlayerWorldPos = Vector2.Zero;
+        Vector2 localPlayerWorldRot = Vector2.Zero;
         Calibrator calibrator;
 
         public Form1()
@@ -64,7 +63,7 @@ namespace Mappr
             Start();
         }
 
-        void PositionUpdated()
+        void Redraw()
         {
             this.InvokeIfRequired(() =>
             {
@@ -77,6 +76,8 @@ namespace Mappr
 
             var playerMapPos = calibrator.WorldToMapScaler.ApplyTransformation(localPlayerWorldPos);
             playerEntity.MapPosition = playerMapPos;
+            playerEntity.Rotation = localPlayerWorldRot;
+
             mapView.InvokeIfRequired(() =>
             {
                 mapView.SetCenter(playerMapPos);
@@ -94,19 +95,16 @@ namespace Mappr
 
             MemoryManager memoryManager = new MemoryManager(readers);
 
-
             Task.Run(async () =>
             {
                 while (true)
                 {
                     try
                     {
-                        if (!ReadMemory(memoryManager))
-                        {
-                            await Task.Delay(1000);
-                        }
+                        if (ReadMemory(memoryManager))
+                            Redraw();
                         else
-                            PositionUpdated();
+                            await Task.Delay(1000);
                     }
                     catch
                     {
@@ -124,14 +122,25 @@ namespace Mappr
                     return false;
             }
 
-            nint unityBase = memoryManager.GetProcessModuleBase("UnityPlayer.dll");
-            nint gameObjectManager = memoryManager.ReadAddress(unityBase + 0x17FFD28);
+            var unityBaseAddress = memoryManager.GetProcessModuleBase("UnityPlayer.dll");
+            var gameObjectManagerAddress = memoryManager.ReadAddress(unityBaseAddress + 0x17FFD28);
+            var gameObjectManager = memoryManager.Read<EFTGameObjectManager>(gameObjectManagerAddress);
 
-            EFTGameObjectManager? world = memoryManager.Read<EFTGameObjectManager>(gameObjectManager);
-            var localPlayerPos = world?.GameWorld?.MainPlayer?.Position ?? Vector3.Zero;
+            var playerWorldTransform = gameObjectManager?.GameWorld?.MainPlayer?.Head?.CalculateWorldTransform();
+            if (playerWorldTransform == null)
+                return false;
 
+            // Calculate the world position of the player
+            localPlayerWorldPos = new Vector2(playerWorldTransform.Position.X, playerWorldTransform.Position.Z);
 
-            localPlayerWorldPos = new Vector2(localPlayerPos.X, localPlayerPos.X);
+            var rotTransform = gameObjectManager?.GameWorld?.MainPlayer?.Head;
+            if (rotTransform == null)
+                return false;
+
+            // // Calculate the looking direction
+            // Vector3 forward = Vector3.Transform(Vector3.UnitZ, rotTransform.Rotation);
+            // Vector2 forward2D = new Vector2(forward.X, forward.Y);
+            // localPlayerWorldRot = Vector2.Normalize(forward2D);
 
             return true;
         }
@@ -191,7 +200,6 @@ namespace Mappr
             g.DrawLine(pen, startPointVertical, endPointVertical);
         }
     }
-
     public class Calibrator
     {
         List<CalibrationPoint> calibrationPoints = new List<CalibrationPoint>();
@@ -254,7 +262,6 @@ namespace Mappr
 
         }
     }
-
     public class Vector2JsonConverter : JsonConverter<Vector2>
     {
         public override Vector2 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -284,6 +291,59 @@ namespace Mappr
         public EFTLocalGameWorld? GameWorld { get; set; }
     }
 
+    public class EFTLocalGameWorld
+    {
+        public EFTPlayer? MainPlayer { get; set; }
+    }
+
+    public class EFTPlayer
+    {
+        public Transform? Head { get; set; }
+
+    }
+    public class Transform
+    {
+        public Transform? Parent { get; set; }
+        public Vector3 Position { get; set; }       //3x 32
+        public Quaternion Rotation { get; set; }    //4x 32
+        public Vector3 Scale { get; set; }          //3x 32    
+
+        public Transform GetRoot()
+        {
+            Transform t = this;
+
+            while (t.Parent != null)
+                t = t.Parent;
+            return t;
+        }
+
+        public Transform CalculateWorldTransform()
+        {
+            Transform result = new Transform
+            {
+                Position = this.Position,
+                Rotation = this.Rotation,
+                Scale = this.Scale,
+            };
+
+            // Traverse the hierarchy
+            Transform? current = this.Parent;
+            while (current != null)
+            {
+                result.Position = Vector3.Transform(result.Position, current.Rotation);
+                result.Position *= current.Scale;
+                result.Position += current.Position;
+                result.Rotation = Quaternion.Multiply(current.Rotation, result.Rotation);
+                result.Scale *= current.Scale;
+                current = current.Parent;
+            }
+
+            return result;
+        }
+    }
+
+
+
     public class EFTGameObjectManagerMemReader : IMemoryReader<EFTGameObjectManager>
     {
         public EFTGameObjectManager Convert(MemoryManager manager, nint gameObjectManager)
@@ -298,33 +358,22 @@ namespace Mappr
         {
             nint activeNodes = memoryManager.ReadChain(gameObjectManager + 0x28, 0);
             nint lastActiveNode = memoryManager.ReadChain(gameObjectManager + 0x20, 0);
-
-            nint cObject = memoryManager.ReadAddress(activeNodes + 0x8);    //FIrst one is not okay?
+            nint cObject = memoryManager.ReadAddress(activeNodes + 0x8);    //0x00 gives problems, so start at 0x08
 
             do
             {
                 nint obj = memoryManager.ReadAddress(cObject + 0x10);
                 nint nameptr = memoryManager.ReadAddress(obj + 0x60);
-                string name = memoryManager.Read<string>(nameptr);
+                string? name = memoryManager.Read<string>(nameptr);
             
                 if (name == "GameWorld")
-                {
                     return obj;
-                }
+
                 cObject = memoryManager.ReadAddress(cObject + 0x8);
             }
             while (cObject != lastActiveNode);
-
             return 0;
         }
-
-
-
-    }
-
-    public class EFTLocalGameWorld
-    {
-        public EFTPlayer? MainPlayer { get; set; }
     }
 
     public class EFTLocalGameWorldMemReader : IMemoryReader<EFTLocalGameWorld>
@@ -340,101 +389,57 @@ namespace Mappr
         }
     }
 
-
-
-
     public class EFTPlayerMemReader : IMemoryReader<EFTPlayer>
     {
-        public EFTPlayer Convert(MemoryManager manager, nint address)
-        {
-            return new EFTPlayer
-            {
-                Position = GetPlayerPosition(manager, address)
-            };
-        }
-
-        private Vector3 GetPlayerPosition(MemoryManager memoryManager, nint playerBase)
+        public EFTPlayer Convert(MemoryManager memoryManager, nint playerBase)
         {
             var head_index = 133;
-            nint transObj = memoryManager.ReadChain(playerBase + 0xA8, 0x28, 0x28, 0x10, 0x20 + (0x8 * head_index), 0x10);
+            nint transObj = memoryManager.ReadChain(
+                playerBase + 0xA8,          // Player body
+                0x28,                       // SkeletonRootJoint
+                0x28,                       // _values -> System.Collections.Generic.List<Transform>
+                0x10,                       // base of list
+                0x20 + (0x8 * head_index),  // Index of head bone -> EFT.BifacialTransform (i think)
+                0x10);                      // Original : UnityEngine.Transform
 
-            var matrix = memoryManager.ReadAddress(transObj + 0x38);
-            var index = memoryManager.Read<int>(transObj + 0x40);
-
-            var matrix_list = memoryManager.ReadAddress(matrix + 0x18);
-            var matrix_indices = memoryManager.ReadAddress(matrix + 0x20);
-
-            Vector3 result = memoryManager.Read<Vector3>(matrix_list + 0x28 * index);
-            int transformIndex = memoryManager.Read<int>(matrix_indices + 4 * index);
-
-            if (matrix_list == 0)
-                return Vector3.Zero;
-
-            while (transformIndex >= 0)
+            return new EFTPlayer
             {
-                var tMatrix = memoryManager.Read<Transform>(matrix_list + 0x28 * transformIndex);
-                if (tMatrix == null)
-                    return Vector3.Zero;
-
-                float rotX = tMatrix.Rotation.X;
-                float rotY = tMatrix.Rotation.Y;
-                float rotZ = tMatrix.Rotation.Z;
-                float rotW = tMatrix.Rotation.W;
-
-                float scaleX = result.X * tMatrix.Scale.X;
-                float scaleY = result.Y * tMatrix.Scale.Y;
-                float scaleZ = result.Z * tMatrix.Scale.Z;
-
-                var x = tMatrix.Position.X + scaleX +
-                    (scaleX * ((rotY * rotY * -2.0f) - (rotZ * rotZ * 2.0f))) +
-                    (scaleY * ((rotW * rotZ * -2.0f) - (rotY * rotX * -2.0f))) +
-                    (scaleZ * ((rotZ * rotX * 2.0f) - (rotW * rotY * -2.0f)));
-                var y = tMatrix.Position.Y + scaleY +
-                    (scaleX * ((rotX * rotY * 2.0f) - (rotW * rotZ * -2.0f))) +
-                    (scaleY * ((rotZ * rotZ * -2.0f) - (rotX * rotX * 2.0f))) +
-                    (scaleZ * ((rotW * rotX * -2.0f) - (rotZ * rotY * -2.0f)));
-                var z = tMatrix.Position.Z + scaleZ +
-                    (scaleX * ((rotW * rotY * -2.0f) - (rotX * rotZ * -2.0f))) +
-                    (scaleY * ((rotY * rotZ * 2.0f) - (rotW * rotX * -2.0f))) +
-                    (scaleZ * ((rotX * rotX * -2.0f) - (rotY * rotY * 2.0f)));
-
-                result = new Vector3((float)x, (float)y, (float)z);
-
-                transformIndex = memoryManager.Read<int>(matrix_indices + 4 * transformIndex);
-            }
-
-            return result;
+                Head = memoryManager.Read<Transform>(transObj)
+            };
         }
     }
-
-    public class Transform
-    {
-        public Vector3 Position { get; set; }       //3x 32
-        public Quaternion Rotation { get; set; }    //4x 32
-        public Vector3 Scale { get; set; }          //3x 32    
-    }
-
-    public class EFTPlayer
-    {
-        public Vector3 Position { get; set; }
-    }
-
-
 
     public class EFTTransformMemReader : IMemoryReader<Transform>
     {
-        public Transform Convert(MemoryManager manager, nint address)
+        public Transform? Convert(MemoryManager memoryManager, nint transObj)
         {
-            Transform transform = new Transform();
-            transform.Position = manager.Read<Vector3>(address);
-            transform.Rotation = manager.Read<Quaternion>(address + 12);
-            transform.Scale = manager.Read<Vector3>(address + 28);
-            return transform;
+            var matrix = memoryManager.ReadAddress(transObj + 0x38);                            // 
+            var index = memoryManager.Read<int>(transObj + 0x40);                               // Index of transform
+            var matrix_list = memoryManager.ReadAddress(matrix + 0x18);                         // List of transforms
+            var matrix_indices = memoryManager.ReadAddress(matrix + 0x20);                      // List of indexes to parent transform
+
+            return GetTransform(memoryManager, matrix_list, matrix_indices, index);
+        }
+    
+        Transform? GetTransform(MemoryManager memoryManager, nint matrix_list, nint matrix_indices, int index)
+        {
+            if (index == -1)
+                return null;
+
+            nint transformBase = matrix_list + 0x28 * index;
+            int parentIndex = memoryManager.Read<int>(matrix_indices + 4 * index);
+            Transform? parent = GetTransform(memoryManager, matrix_list, matrix_indices, parentIndex);
+            return new Transform
+            {
+                Parent = parent,
+                Position = memoryManager.Read<Vector3>(transformBase),
+                Rotation = memoryManager.Read<Quaternion>(transformBase + 12),
+                Scale = memoryManager.Read<Vector3>(transformBase + 28)
+            };
         }
     }
 
-
-
+    
 }
 
 
