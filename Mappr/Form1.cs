@@ -95,12 +95,12 @@ namespace Mappr
         public GameSettingsLoader()
         {
             deserializer = new DeserializerBuilder()
-                .WithTypeConverter(new Vector2TypeConverter())
+                .WithTypeConverter(new Vector2YamlConverter())
                 .IgnoreUnmatchedProperties()
                 .Build();
 
             serializer = new SerializerBuilder()
-                .WithTypeConverter(new Vector2TypeConverter())
+                .WithTypeConverter(new Vector2YamlConverter())
                 .Build();
         }
 
@@ -111,8 +111,6 @@ namespace Mappr
             {
                 case "Tarkov":
                     return GetSettings<TarkovSettings>(file);
-                case "Gta":
-                    return GetSettings<GtaSettings>(file);
                 default:
                     Console.WriteLine("Unsupported engine type.");
                     break;
@@ -134,7 +132,7 @@ namespace Mappr
     }
 
 
-    public class Vector2TypeConverter : IYamlTypeConverter
+    public class Vector2YamlConverter : IYamlTypeConverter
     {
         public bool Accepts(Type type) => type == typeof(Vector2);
 
@@ -168,26 +166,6 @@ namespace Mappr
                 throw new InvalidOperationException($"Expected a type of {typeof(Vector2).Name}");
         }
     }
-
-
-    public class GameSettings
-    {
-        public string Name { get; set; } = "";
-        public string Engine { get; set; } = "";
-        public string Process { get; set; } = "";
-
-
-        public override string ToString() => Name;
-    }
-
-    public class GtaSettings : GameSettings
-    {
-        public int Address { get; set; }
-    }
-
-
-
-
 
     public class CalibrationPoint : MapEntity
     {
