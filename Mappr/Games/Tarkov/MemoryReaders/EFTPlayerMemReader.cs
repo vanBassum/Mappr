@@ -7,7 +7,7 @@ namespace Mappr.Games.Tarkov.MemoryReaders
     {
         public EFTPlayer Convert(MemoryManager memoryManager, nint playerBase)
         {
-            var head_index = 133;
+            var head_index = 1; //133 for head
             nint transObj = memoryManager.ReadChain(
                 playerBase + 0xA8,          // Player body
                 0x28,                       // SkeletonRootJoint
@@ -18,7 +18,7 @@ namespace Mappr.Games.Tarkov.MemoryReaders
 
             return new EFTPlayer
             {
-                Head = memoryManager.Read<Transform>(transObj)
+                RootBone = memoryManager.Read<Transform>(transObj)
             };
         }
     }

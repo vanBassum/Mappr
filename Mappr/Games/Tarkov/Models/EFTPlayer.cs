@@ -2,7 +2,7 @@
 {
     public class EFTPlayer
     {
-        public Transform? Head { get; set; }
+        public Transform? RootBone { get; set; }
 
     }
 }
