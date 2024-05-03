@@ -14,7 +14,6 @@ namespace Mappr.Controls
             this.mapToScreen = mapToScreen;
         }
 
-
         public void RenderTiles(Graphics g, ITileSource TileSource, Vector2 screenSize)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -63,9 +62,9 @@ namespace Mappr.Controls
             Font font = new Font("Arial", 12);
             Brush brush = Brushes.Yellow; // You can choose a different color
             float h = font.Height;
-            g.DrawString($"Tiles: {stopwatch.Elapsed.TotalMilliseconds}", font, brush, 0, h * 0);
+            g.DrawString($"Tiles draw time: {stopwatch.Elapsed.TotalMilliseconds}", font, brush, 0, h * 0);
             g.DrawString($"Scale: {mapToScreen.Scale}", font, brush, 0, h * 1);
-            //g.DrawString($"Offset: {mapToScreen.Offset}", font, brush, 0, h * 2);
+            g.DrawString($"Offset: {mapToScreen.Offset}", font, brush, 0, h * 2);
         }
     }
 }

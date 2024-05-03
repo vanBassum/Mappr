@@ -52,6 +52,7 @@ namespace Mappr.Controls
                 item.Click += (a, b) => onClick.Invoke(data);
         }
 
+
         public virtual void ShowMenu(Vector2 pos, T? data)
         {
             this.data = data;

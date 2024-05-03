@@ -1,4 +1,5 @@
-﻿using System.Configuration;
+﻿using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
@@ -6,6 +7,7 @@ using Mappr.Kernel.DataConverters;
 
 namespace Mappr.Kernel
 {
+
     public class MemoryManager : IDisposable
     {
         private readonly Dictionary<Type, IMemoryReader> _converters;
@@ -72,9 +74,13 @@ namespace Mappr.Kernel
                 return false;
             }
         }
-#endregion
+        #endregion
 
-
+        public static bool IsProcessRunning(string processName)
+        {
+            var processes = Process.GetProcesses();
+            return processes.Any(process => string.Equals(process.ProcessName, processName, StringComparison.OrdinalIgnoreCase));
+        }
 
         public nint GetProcessBase()
         {
